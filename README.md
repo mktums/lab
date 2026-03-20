@@ -30,9 +30,9 @@ Internet
 │       dnsmasq → unbound                 │
 │  adblock-lean (medium preset)           │
 └───┬─────────────────┬───────────────────┘
-    │ LAN              │ IoT
-    │ 10.10.10.0/24    │ 10.10.30.0/24
-    │                  │ (isolated, WAN only)
+    │ LAN             │ IoT
+    │ 10.10.10.0/24   │ 10.10.30.0/24
+    │                 │ (isolated, WAN only)
     │
     ├── lab1  10.10.10.10
     │   Ubuntu Server 24.04
@@ -143,7 +143,7 @@ ansible-vault edit vault/secrets.yml
 # add: vault_portainer_admin_hash: "$2y$..."
 ```
 
-### 8. Vault — add step-ca password
+### 9. Vault — add step-ca password
 
 Pick any strong password for the CA key encryption:
 
@@ -152,7 +152,7 @@ ansible-vault edit vault/secrets.yml
 # add: vault_step_ca_password: "..."
 ```
 
-### 9. Run servers playbook (first time — step-ca init)
+### 10. Run servers playbook (first time — step-ca init)
 
 ```bash
 ansible-playbook playbooks/servers.yml
@@ -161,7 +161,7 @@ ansible-playbook playbooks/servers.yml
 This will start step-ca and print its root fingerprint. The Traefik play will
 be skipped on this run because `vault_step_ca_root_cert` is not yet set.
 
-### 10. Vault — add step-ca fingerprint and root cert
+### 11. Vault — add step-ca fingerprint and root cert
 
 step-ca data is bind-mounted to `/data/docker/step-ca` on lab1. Read directly from there:
 
@@ -184,7 +184,7 @@ ansible-vault edit vault/secrets.yml
 #     -----END CERTIFICATE-----
 ```
 
-### 11. Install root CA on your devices
+### 12. Install root CA on your devices
 
 You already have `homelab-ca.crt` locally from the previous step.
 
@@ -199,7 +199,7 @@ You already have `homelab-ca.crt` locally from the previous step.
 Do this once per device. After this, all `*.lan` HTTPS services will show a
 green padlock with no warnings.
 
-### 12. Run servers playbook (second time — Traefik)
+### 13. Run servers playbook (second time — Traefik)
 
 ```bash
 ansible-playbook playbooks/servers.yml
@@ -250,6 +250,18 @@ ansible-playbook playbooks/site.yml
 Add `--ask-vault-pass` if not using `.vault_pass`.
 
 The router playbook does not support `--check` mode.
+
+---
+
+## Troubleshooting
+
+**`DNS_PROBE_FINISHED_NXDOMAIN` for `*.lan` in Chrome/Edge**
+
+Chromium-based browsers have a "Use secure DNS" (DoH) setting that bypasses the system resolver and sends queries to a public DNS provider, which has no knowledge of your local `.lan` domain.
+
+Disable it: `chrome://settings/security` → "Use secure DNS" → off.
+
+Same applies to Edge: `edge://settings/privacy` → "Use secure DNS" → off.
 
 ---
 
