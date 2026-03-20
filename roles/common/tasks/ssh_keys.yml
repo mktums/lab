@@ -1,0 +1,7 @@
+---
+- name: Deploy admin SSH public key
+  ansible.posix.authorized_key:
+    user: "{{ admin_user }}"
+    key: "{{ admin_ssh_pubkey }}"
+    state: present
+    exclusive: false

@@ -1,0 +1,62 @@
+---
+admin_user: "{{ vault_admin_user }}"
+admin_ssh_pubkey: "{{ vault_admin_ssh_pubkey }}"
+ansible_user: "{{ vault_admin_user }}"
+
+# geerlingguy.security
+security_ssh_port: 22
+security_ssh_permit_root_login: "no"
+security_ssh_password_authentication: "no"
+security_ssh_x11_forwarding: "no"
+security_ssh_allowed_users:
+  - "{{ vault_admin_user }}"
+security_fail2ban_enabled: true
+security_autoupdate_enabled: true
+security_autoupdate_reboot: false
+
+common_packages:
+  - bash-completion
+  - vim
+  - nano
+  - mc
+  - bat
+  - eza
+  - lnav
+  - htop
+  - btop
+  - smartmontools
+  - nvme-cli
+  - mdadm
+  - git
+  - jq
+  - python3-dev
+  - python3-pip
+  - python3-venv
+  - uv
+  - rsync
+  - fzf
+  - openssl
+
+docker_install: true
+docker_users:
+  - "{{ admin_user }}"
+
+unattended_upgrades_enabled: true
+
+# Traefik — deployed to docker_hosts
+traefik_install: true
+traefik_acme_email: "admin@{{ lan_domain }}"
+# htpasswd-format entries, generate with: htpasswd -nB admin
+traefik_dashboard_users:
+  - "{{ vault_traefik_dashboard_user }}"
+
+# step-ca
+step_ca_install: true
+step_ca_port: 8443
+step_ca_name: "Homelab CA"
+step_ca_fingerprint: "{{ vault_step_ca_fingerprint | default('') }}"
+# Root cert PEM — populated in vault after first step-ca run
+vault_step_ca_root_cert: "{{ vault_step_ca_root_cert | default('') }}"
+
+# Portainer
+portainer_install: true

@@ -1,0 +1,30 @@
+---
+- name: Configure Ubuntu servers
+  hosts: servers
+  become: true
+  vars_files:
+    - ../vault/secrets.yml
+  roles:
+    - role: common
+    - role: docker
+      when: docker_install | default(false)
+
+- name: Deploy step-ca (private ACME CA)
+  hosts: step_ca_hosts
+  become: true
+  vars_files:
+    - ../vault/secrets.yml
+  roles:
+    - role: step_ca
+      when: step_ca_install | default(false)
+
+- name: Deploy Traefik on Docker hosts
+  hosts: docker_hosts
+  become: true
+  vars_files:
+    - ../vault/secrets.yml
+  roles:
+    - role: traefik
+      when: traefik_install | default(false)
+    - role: portainer
+      when: portainer_install | default(false)

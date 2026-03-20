@@ -1,0 +1,5 @@
+---
+- name: Install packages
+  community.openwrt.opkg:
+    name: "{{ openwrt_packages | join(',') }}"
+    state: present

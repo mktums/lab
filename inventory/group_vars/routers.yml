@@ -1,0 +1,76 @@
+---
+openwrt_hostname: "openwrt"
+openwrt_timezone: "Europe/Moscow"
+
+# LAN — IP is set manually before Ansible runs (see README)
+lan_dhcp_start: "100"
+lan_dhcp_limit: "150"
+lan_dhcp_leasetime: "12h"
+lan_domain: "lan"
+
+# DNS CNAMEs — point service names to hosts
+dns_cnames: []
+# example:
+#   - { cname: portainer.lan, target: lab1.lan }
+
+# IoT
+iot_ip: "10.10.30.1"
+iot_netmask: "255.255.255.0"
+iot_dhcp_start: "100"
+iot_dhcp_limit: "100"
+iot_dhcp_leasetime: "12h"
+
+# WAN — DHCP is the default, no Ansible config needed
+
+# Wi-Fi
+wifi_country: "RU"
+
+wifi_radios:
+  - name: radio0
+    band: "2g"
+    htmode: "HE20"
+    channel: auto
+  - name: radio1
+    band: "5g"
+    htmode: "HE80"
+    channel: auto
+
+wifi_interfaces:
+  - name: wlan_main_2g
+    radio: radio0
+    ssid: "ztfk"
+    password: "{{ vault_wifi_main_password }}"
+    encryption: "sae-mixed"
+    hidden: true
+    network: lan
+  - name: wlan_main_5g
+    radio: radio1
+    ssid: "ztfk"
+    password: "{{ vault_wifi_main_password }}"
+    encryption: "sae-mixed"
+    hidden: true
+    network: lan
+  - name: wlan_iot
+    radio: radio0
+    ssid: "mktums_iot"
+    password: "{{ vault_wifi_iot_password }}"
+    encryption: "psk2"
+    hidden: false
+    network: iot
+
+# DHCP reservations
+dhcp_reservations:
+  - name: lab1
+    mac: "70:85:c2:63:58:59"
+    ip: "10.10.10.10"
+
+# Packages
+openwrt_packages:
+  - luci
+  - luci-ssl
+  - tcpdump
+  - htop
+  - iptables-nft
+
+# adblock-lean — medium preset, cron schedule only (rest comes from gen_config)
+adblock_cron_schedule: "0 3 * * *"

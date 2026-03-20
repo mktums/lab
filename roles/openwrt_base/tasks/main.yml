@@ -1,0 +1,10 @@
+---
+- name: Gather OpenWrt facts
+  community.openwrt.setup:
+
+- ansible.builtin.include_tasks: packages.yml
+- ansible.builtin.include_tasks: system.yml
+- ansible.builtin.include_tasks: network.yml
+- ansible.builtin.include_tasks: dhcp.yml
+- ansible.builtin.include_tasks: firewall.yml
+- ansible.builtin.include_tasks: wifi.yml

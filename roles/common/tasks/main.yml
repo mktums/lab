@@ -1,0 +1,6 @@
+---
+- ansible.builtin.include_tasks: packages.yml
+- ansible.builtin.include_tasks: ssh_keys.yml
+
+- ansible.builtin.include_role:
+    name: geerlingguy.security

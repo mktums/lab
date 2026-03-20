@@ -1,0 +1,43 @@
+---
+- name: Create Traefik directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - /opt/traefik
+    - /opt/traefik/acme
+
+- name: Install step-ca root cert into system trust store
+  ansible.builtin.copy:
+    content: "{{ vault_step_ca_root_cert }}"
+    dest: /usr/local/share/ca-certificates/step-ca-root.crt
+    mode: "0644"
+  notify: Update CA certificates
+
+# Flush here so update-ca-certificates runs before Traefik starts,
+# ensuring the ACME endpoint is trusted when Traefik first contacts step-ca.
+- name: Flush handlers to update CA trust before deploying Traefik
+  ansible.builtin.meta: flush_handlers
+
+- name: Deploy Traefik static config
+  ansible.builtin.template:
+    src: traefik.yml.j2
+    dest: /opt/traefik/traefik.yml
+    mode: "0644"
+  notify: Restart Traefik
+
+- name: Deploy Traefik docker-compose
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: /opt/traefik/docker-compose.yml
+    mode: "0644"
+  notify: Restart Traefik
+
+- name: Pull and start Traefik
+  community.docker.docker_compose_v2:
+    project_src: /opt/traefik
+    state: present
+    pull: missing

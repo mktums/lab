@@ -1,0 +1,5 @@
+---
+- ansible.builtin.include_tasks: deploy.yml
+- ansible.builtin.include_tasks: fingerprint.yml
+- ansible.builtin.include_tasks: trust.yml
+- ansible.builtin.include_tasks: cname.yml
