@@ -1,0 +1,6 @@
+---
+- name: Restart beszel
+  community.docker.docker_container:
+    name: beszel
+    state: started
+    restart: true

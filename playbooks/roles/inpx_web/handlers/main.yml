@@ -1,0 +1,6 @@
+---
+- name: Restart inpx-web
+  community.docker.docker_container:
+    name: inpx-web
+    state: started
+    restart: true

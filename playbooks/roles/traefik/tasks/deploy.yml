@@ -1,0 +1,80 @@
+---
+- name: Create Traefik directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - /opt/traefik
+    - /opt/traefik/acme
+
+- name: Install step-ca root cert into system trust store
+  ansible.builtin.copy:
+    content: "{{ step_ca_root_cert_pem }}"
+    dest: /usr/local/share/ca-certificates/step-ca-root.crt
+    mode: "0644"
+  notify: Update CA certificates
+
+- name: Flush handlers to update CA trust before deploying Traefik
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure CA certificates are up to date
+  ansible.builtin.command: update-ca-certificates --fresh
+  changed_when: false
+  
+- name: Deploy Traefik dynamic config only (for routers/middlewares)
+  ansible.builtin.template:
+    src: traefik-dynamic.yml.j2
+    dest: /opt/traefik/traefik-dynamic.yml
+    mode: "0644"
+  notify: Restart Traefik
+
+- name: Ensure acme.json exists with correct permissions
+  ansible.builtin.file:
+    path: /opt/traefik/acme/acme.json
+    state: touch
+    owner: root
+    group: root
+    mode: "0600"
+    modification_time: preserve
+    access_time: preserve
+
+
+- name: Deploy Traefik container with CLI arguments
+  community.docker.docker_container:
+    name: traefik
+    image: traefik:v3
+    pull: missing
+    restart_policy: unless-stopped
+    network_mode: host
+    command: >
+      --global.checknewversion=false
+      --global.sendanonymoususage=false
+      --log.level=INFO
+      --api.dashboard=true
+      --entrypoints.web.address=:80
+      --entrypoints.web.http.redirections.entrypoint.to=websecure
+      --entrypoints.web.http.redirections.entrypoint.scheme=https
+      --entrypoints.web.http.redirections.entrypoint.permanent=true
+      --entrypoints.websecure.address=:443
+      --providers.docker.exposedbydefault=false
+      --providers.docker.watch=true
+      --providers.file.filename=/traefik-dynamic.yml
+      --providers.file.watch=true
+      --certificatesresolvers.step-ca.acme.email={{ traefik_acme_email }}
+      --certificatesresolvers.step-ca.acme.storage=/acme/acme.json
+      --certificatesresolvers.step-ca.acme.caserver=https://step-ca.{{ lan_domain }}:{{ step_ca_port }}/acme/acme/directory
+      --certificatesresolvers.step-ca.acme.httpchallenge=true
+      --certificatesresolvers.step-ca.acme.httpchallenge.entryPoint=web
+      --certificatesresolvers.step-ca.acme.tlschallenge=false
+      --log.level=DEBUG
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /opt/traefik/traefik-dynamic.yml:/traefik-dynamic.yml:ro
+      - /opt/traefik/acme:/acme
+      - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
+    labels:
+      traefik.enable: "false"
+

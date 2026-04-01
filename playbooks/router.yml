@@ -14,26 +14,7 @@
           Re-run without --check.
       when: ansible_check_mode
 
-    # Replaces community.openwrt.init which has a bug in 1.1.0 where
-    # community.openwrt.command returns a dict (no .rc) on first connection.
-    # We set the required connection facts manually and install compat packages via raw.
-    - name: Set community.openwrt connection facts
-      ansible.builtin.set_fact:
-        ansible_ssh_transfer_method: "piped"
-        ansible_ssh_use_tty: false
-        ansible_scp_if_ssh: false
-        ansible_remote_tmp: "/tmp/.ansible"
-        ansible_python_interpreter: "none"
-        openwrt_package_manager: "opkg"
-
-    - name: Ensure opkg cache is fresh
-      ansible.builtin.raw: opkg update
-      changed_when: false
-
-    - name: Install openssl-util (provides base64/md5sum/sha1sum for community.openwrt modules)
-      ansible.builtin.raw: opkg install openssl-util || true
-      changed_when: false
-
   roles:
+    - role: community.openwrt.init
     - role: openwrt_base
     - role: openwrt_adblock

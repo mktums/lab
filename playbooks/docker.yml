@@ -1,0 +1,8 @@
+---
+- name: Install Docker
+  hosts: docker_hosts
+  become: true
+  vars_files:
+    - ../vault/secrets.yml
+  roles:
+    - role: docker

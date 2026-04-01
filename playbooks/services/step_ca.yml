@@ -1,0 +1,8 @@
+---
+- name: Deploy step-ca
+  hosts: step_ca_hosts
+  become: true
+  vars_files:
+    - ../../vault/secrets.yml
+  roles:
+    - role: step_ca

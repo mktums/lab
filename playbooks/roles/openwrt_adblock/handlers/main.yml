@@ -1,0 +1,8 @@
+---
+# Note: "Commit and restart dnsmasq" / "Restart dnsmasq service" are intentionally
+# omitted here — they are already defined in openwrt_base/handlers/main.yml and
+# Ansible deduplicates handlers by name within a play.
+
+- name: Commit and restart unbound
+  ansible.builtin.raw: uci commit unbound && service unbound restart
+  changed_when: true

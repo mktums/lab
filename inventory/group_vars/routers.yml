@@ -1,12 +1,11 @@
 ---
 openwrt_hostname: "openwrt"
-openwrt_timezone: "Europe/Moscow"
+openwrt_timezone: "MSK-3"
 
 # LAN — IP is set manually before Ansible runs (see README)
 lan_dhcp_start: "100"
 lan_dhcp_limit: "150"
 lan_dhcp_leasetime: "12h"
-lan_domain: "lan"
 
 # DNS CNAMEs — point service names to hosts
 dns_cnames: []
@@ -63,6 +62,9 @@ dhcp_reservations:
   - name: lab1
     mac: "70:85:c2:63:58:59"
     ip: "10.10.10.10"
+  - name: lab2
+    mac: "2c:56:dc:7b:69:d1"
+    ip: "10.10.10.11"
 
 # Packages
 openwrt_packages:
@@ -74,3 +76,14 @@ openwrt_packages:
 
 # adblock-lean — medium preset, cron schedule only (rest comes from gen_config)
 adblock_cron_schedule: "0 3 * * *"
+
+# Port forwards (DNAT from WAN to LAN hosts)
+port_forwards: []
+# example:
+#   - name: awg
+#     proto: udp
+#     src_dport: "51820"
+#     dest_ip: "10.10.10.10"
+#     dest_port: "51820"
+
+

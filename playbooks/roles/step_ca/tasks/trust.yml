@@ -1,0 +1,21 @@
+---
+# Install step-ca's root cert into the system trust store on the CA host itself.
+# This lets curl, apt, and other tools on this host trust *.lan certs.
+
+- name: Extract root CA certificate from container
+  community.docker.docker_container_exec:
+    container: step-ca
+    command: cat certs/root_ca.crt
+  register: _step_ca_root_cert
+  changed_when: false
+
+- name: Install root CA into system trust store
+  ansible.builtin.copy:
+    content: "{{ _step_ca_root_cert.stdout }}"
+    dest: /usr/local/share/ca-certificates/step-ca-root.crt
+    mode: "0644"
+  notify: Update CA certificates
+
+- name: Ensure CA certificates are up to date
+  ansible.builtin.command: update-ca-certificates
+  changed_when: false

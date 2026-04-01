@@ -1,0 +1,6 @@
+---
+- name: Restart qBittorrent
+  community.docker.docker_container:
+    name: qbittorrent
+    state: started
+    restart: true

@@ -1,0 +1,16 @@
+---
+nvidia_gpu: true
+
+# Beszel agent configuration
+beszel_smart_devices:
+  - /dev/sda:/dev/sda
+  - /dev/sdb:/dev/sdb
+  - /dev/sdc:/dev/sdc
+  - /dev/sdd:/dev/sdd
+  - /dev/nvme0:/dev/nvme0
+beszel_smart_cap_add:
+  - SYS_RAWIO
+  - SYS_ADMIN
+beszel_extra_volumes:
+  - /data/.beszel:/extra-filesystems/md0p1:ro
+  - /spare/.beszel:/extra-filesystems/sdd1:ro

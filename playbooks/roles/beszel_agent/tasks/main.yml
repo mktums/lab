@@ -1,0 +1,44 @@
+---
+- name: Ensure .beszel folders exist for extra volumes
+  ansible.builtin.file:
+    path: "{{ item.split(':')[0] }}"
+    state: directory
+    mode: '0755'
+  loop: "{{ beszel_extra_volumes | default([]) }}"
+  when: beszel_extra_volumes | default([]) | length > 0
+
+- name: Build Beszel agent volumes list
+  ansible.builtin.set_fact:
+    beszel_agent_volumes: >-
+      {{ 
+        ['/data/docker/beszel-agent:/var/lib/beszel-agent', '/var/run/docker.sock:/var/run/docker.sock:ro'] 
+        + (beszel_extra_volumes | default([]) | list) 
+      }}
+
+- name: Build Beszel agent environment
+  ansible.builtin.set_fact:
+    beszel_agent_env: >-
+      {{ 
+        {
+          'LISTEN': '45876',
+          'HUB_URL': 'http://lab1.' + lan_domain + ':8090',
+          'TOKEN': beszel_token,
+          'KEY': beszel_hub_key,
+          'DISK_USAGE_CACHE': '1h'
+        }
+        | combine({'GPU_COLLECTOR': 'nvml'} if nvidia_gpu | default(false) else {}) 
+      }}
+
+- name: Deploy Beszel agent container (remote)
+  community.docker.docker_container:
+    name: beszel-agent
+    image: "{{ 'henrygd/beszel-agent-nvidia' if nvidia_gpu | default(false) else 'henrygd/beszel-agent:alpine' }}"
+    pull: missing
+    restart_policy: unless-stopped
+    network_mode: host
+    device_requests: "{{ [{'count': -1, 'capabilities': [['gpu']]}] if nvidia_gpu | default(false) else omit }}"
+    devices: "{{ beszel_smart_devices | default(omit) }}"
+    capabilities: "{{ beszel_smart_cap_add | default(omit) }}"
+    volumes: "{{ beszel_agent_volumes }}"
+    env: "{{ beszel_agent_env }}"
+  when: beszel_token | default('') | length > 0

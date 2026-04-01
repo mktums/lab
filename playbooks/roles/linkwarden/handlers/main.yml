@@ -1,0 +1,6 @@
+---
+- name: Restart linkwarden
+  community.docker.docker_container:
+    name: linkwarden
+    state: started
+    restart: true

@@ -1,0 +1,44 @@
+---
+- name: Wait for Postgres to be ready
+  community.docker.docker_container_exec:
+    container: postgres
+    command: pg_isready -U postgres
+  register: _pg_ready
+  until: _pg_ready.rc == 0
+  retries: 15
+  delay: 4
+  changed_when: false
+
+- name: Create linkwarden database user
+  community.docker.docker_container_exec:
+    container: postgres
+    command: >
+      psql -U postgres -tc
+      "SELECT 1 FROM pg_roles WHERE rolname='linkwarden'"
+  register: _user_exists
+  changed_when: false
+
+- name: Create user if not exists
+  community.docker.docker_container_exec:
+    container: postgres
+    command: >
+      psql -U postgres -c
+      "CREATE USER linkwarden WITH PASSWORD '{{ linkwarden_db_password }}'"
+  when: _user_exists.stdout | trim != '1'
+
+- name: Create linkwarden database
+  community.docker.docker_container_exec:
+    container: postgres
+    command: >
+      psql -U postgres -tc
+      "SELECT 1 FROM pg_database WHERE datname='linkwarden'"
+  register: _db_exists
+  changed_when: false
+
+- name: Create database if not exists
+  community.docker.docker_container_exec:
+    container: postgres
+    command: >
+      psql -U postgres -c
+      "CREATE DATABASE linkwarden OWNER linkwarden"
+  when: _db_exists.stdout | trim != '1'

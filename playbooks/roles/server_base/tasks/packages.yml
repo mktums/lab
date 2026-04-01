@@ -1,0 +1,18 @@
+---
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install common packages
+  ansible.builtin.apt:
+    name: "{{ common_packages }}"
+    state: present
+
+- name: Install NVIDIA drivers and CUDA
+  when: nvidia_gpu | default(false)
+  ansible.builtin.apt:
+    name:
+      - nvidia-driver-590
+      - nvidia-cuda-toolkit
+    state: present

@@ -1,0 +1,9 @@
+---
+- name: Wait for Beszel hub to be ready
+  ansible.builtin.uri:
+    url: "http://localhost:8090/api/health"
+    status_code: 200
+  register: _beszel_ready
+  until: _beszel_ready.status == 200
+  retries: 15
+  delay: 4

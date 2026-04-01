@@ -1,7 +1,0 @@
----
-- name: Restart Portainer
-  community.docker.docker_compose_v2:
-    project_src: /opt/portainer
-    state: present
-    pull: missing
-    recreate: always

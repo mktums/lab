@@ -1,0 +1,92 @@
+---
+- name: Create directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - /opt/inpx-web
+    - /data/docker/inpx-web/inpx-web
+    - /data/docker/inpx-web/liberama
+
+- name: Copy build context to host
+  ansible.builtin.copy:
+    src: "../{{ item }}"
+    dest: "/opt/inpx-web/{{ item }}"
+    mode: "0644"
+  loop:
+    - Dockerfile
+    - supervisord.conf
+    - entrypoint.sh
+
+- name: Fix entrypoint permissions
+  ansible.builtin.file:
+    path: /opt/inpx-web/entrypoint.sh
+    mode: "0755"
+
+- name: Checksum build context
+  ansible.builtin.stat:
+    path: "/opt/inpx-web/{{ item }}"
+    checksum_algorithm: sha256
+  loop:
+    - Dockerfile
+    - supervisord.conf
+    - entrypoint.sh
+  register: _build_context_stats
+
+- name: Set build context hash
+  ansible.builtin.set_fact:
+    _build_hash: "{{ _build_context_stats.results | map(attribute='stat.checksum') | join('') | hash('sha256') }}"
+
+- name: Read previous build hash
+  ansible.builtin.slurp:
+    src: /opt/inpx-web/.build_hash
+  register: _prev_hash
+  failed_when: false
+
+- name: Build image
+  community.docker.docker_image:
+    name: inpx-web
+    tag: local
+    build:
+      path: /opt/inpx-web
+      pull: true
+    source: build
+    force_source: true
+  when: _build_hash != (_prev_hash.content | default('') | b64decode | trim)
+  notify: Restart inpx-web
+
+- name: Save build hash
+  ansible.builtin.copy:
+    content: "{{ _build_hash }}"
+    dest: /opt/inpx-web/.build_hash
+    mode: "0644"
+
+- name: Deploy container
+  community.docker.docker_container:
+    name: inpx-web
+    image: inpx-web:local
+    pull: never
+    restart_policy: unless-stopped
+    env:
+      LIB_DOMAIN: "lib.{{ lan_domain }}"
+    volumes:
+      - /data/docker/inpx-web:/data
+      - /data/downloads:/downloads:ro
+    labels:
+      traefik.enable: "true"
+      # inpx-web — owns /
+      traefik.http.routers.inpx-web.rule: "Host(`lib.{{ lan_domain }}`)"
+      traefik.http.routers.inpx-web.entrypoints: "websecure"
+      traefik.http.routers.inpx-web.tls: "true"
+      traefik.http.routers.inpx-web.tls.certresolver: "step-ca"
+      traefik.http.routers.inpx-web.service: "inpx-web"
+      traefik.http.services.inpx-web.loadbalancer.server.port: "12380"
+      # liberama — owns /read
+      traefik.http.routers.liberama.rule: "Host(`lib.{{ lan_domain }}`) && PathPrefix(`/read`)"
+      traefik.http.routers.liberama.entrypoints: "websecure"
+      traefik.http.routers.liberama.tls: "true"
+      traefik.http.routers.liberama.tls.certresolver: "step-ca"
+      traefik.http.routers.liberama.service: "liberama"
+      traefik.http.services.liberama.loadbalancer.server.port: "44080"
+  notify: Restart inpx-web

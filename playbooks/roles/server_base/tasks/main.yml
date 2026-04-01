@@ -1,0 +1,29 @@
+---
+- ansible.builtin.include_tasks: packages.yml
+- ansible.builtin.include_tasks: ssh_keys.yml
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ timezone }}"
+
+- name: Generate locales
+  community.general.locale_gen:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - en_US.UTF-8
+    - en_DK.UTF-8
+    - ru_RU.UTF-8
+
+- name: Set locale
+  ansible.builtin.copy:
+    dest: /etc/default/locale
+    content: |
+      LANG=en_DK.UTF-8
+      LC_MESSAGES=en_US.UTF-8
+      LC_COLLATE=ru_RU.UTF-8
+      LC_CTYPE=ru_RU.UTF-8
+    mode: "0644"
+
+- ansible.builtin.include_role:
+    name: geerlingguy.security

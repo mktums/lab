@@ -1,0 +1,32 @@
+---
+- name: Create Vaultwarden data directory
+  ansible.builtin.file:
+    path: /data/docker/vaultwarden
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Deploy Vaultwarden container
+  community.docker.docker_container:
+    name: vaultwarden
+    image: vaultwarden/server:latest
+    pull: missing
+    restart_policy: unless-stopped
+    dns_servers:
+      - "172.17.0.1"
+    volumes:
+      - /data/docker/vaultwarden:/data
+    env:
+      DOMAIN: "https://vw.{{ lan_domain }}"
+      ADMIN_TOKEN: "{{ vault_vaultwarden_admin_token }}"
+      SIGNUPS_ALLOWED: "true"
+      LOG_LEVEL: "warn"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.vaultwarden.rule: "Host(`vw.{{ lan_domain }}`)"
+      traefik.http.routers.vaultwarden.entrypoints: "websecure"
+      traefik.http.routers.vaultwarden.tls: "true"
+      traefik.http.routers.vaultwarden.tls.certresolver: "step-ca"
+      traefik.http.services.vaultwarden.loadbalancer.server.port: "80"
+  notify: Restart Vaultwarden

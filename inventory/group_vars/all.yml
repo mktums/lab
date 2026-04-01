@@ -1,2 +1,4 @@
 ---
 timezone: "Europe/Moscow"
+lan_domain: "lan"
+lan_dns: "10.10.10.1"

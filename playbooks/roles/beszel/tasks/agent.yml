@@ -1,0 +1,24 @@
+---
+- name: Deploy Beszel agent container (local via socket)
+  community.docker.docker_container:
+    name: beszel-agent
+    image: henrygd/beszel-agent:latest
+    pull: missing
+    restart_policy: unless-stopped
+    network_mode: host
+    device_requests: "{{ [{'count': -1, 'capabilities': [['gpu']]}] if nvidia_gpu | default(false) else omit }}"
+    volumes:
+      - /data/docker/beszel/agent:/var/lib/beszel-agent
+      - /data/docker/beszel/socket:/beszel_socket
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    env: >-
+      {{
+        {
+          'LISTEN': '/beszel_socket/beszel.sock',
+          'TOKEN': beszel_token,
+          'KEY': beszel_hub_key,
+          'DISK_USAGE_CACHE': '1h'
+        }
+        | combine({'NVML': 'true'} if nvidia_gpu | default(false) else {})
+      }}
+  when: beszel_token | default('') | length > 0

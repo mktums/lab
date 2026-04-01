@@ -1,0 +1,10 @@
+---
+# Beszel agent configuration for lab2
+beszel_smart_devices:
+  - /dev/sda:/dev/sda
+  - /dev/sdb:/dev/sdb
+beszel_smart_cap_add:
+  - SYS_RAWIO
+  - SYS_ADMIN
+beszel_extra_volumes:
+  - /data/.beszel:/extra-filesystems/sda1:ro

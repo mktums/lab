@@ -1,0 +1,26 @@
+---
+- name: Deploy Portainer container
+  community.docker.docker_container:
+    name: portainer
+    image: portainer/portainer-ce:latest
+    pull: missing
+    restart_policy: unless-stopped
+    published_ports:
+      - "9000:9000"
+      - "8000:8000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer-data:/data
+    command:
+      - --admin-password={{ portainer_admin_password | password_hash('bcrypt', vault_bcrypt_salt) }}
+      - --http-enabled
+      - --bind=:9000
+      - --bind-https=
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.portainer.rule: "Host(`portainer.{{ lan_domain }}`)"
+      traefik.http.routers.portainer.entrypoints: "websecure"
+      traefik.http.routers.portainer.tls: "true"
+      traefik.http.routers.portainer.tls.certresolver: "step-ca"
+      traefik.http.services.portainer.loadbalancer.server.port: "9000"
+  notify: Restart Portainer

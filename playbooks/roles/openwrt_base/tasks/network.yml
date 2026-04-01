@@ -1,0 +1,49 @@
+---
+- name: Disable IPv6 on WAN
+  community.openwrt.uci:
+    command: set
+    key: "{{ item.key }}"
+    value: "{{ item.value }}"
+  loop:
+    - { key: network.wan6.disabled, value: "1" }
+    - { key: network.wan.ipv6,      value: "0" }
+
+- name: Create IoT interface
+  community.openwrt.uci:
+    command: set
+    key: network.iot
+    value: interface
+
+- name: Set IoT protocol
+  community.openwrt.uci:
+    command: set
+    key: network.iot.proto
+    value: static
+
+- name: Set IoT device type to bridge
+  community.openwrt.uci:
+    command: set
+    key: network.iot.type
+    value: bridge
+
+- name: Set IoT IP
+  community.openwrt.uci:
+    command: set
+    key: network.iot.ipaddr
+    value: "{{ iot_ip }}"
+
+- name: Set IoT netmask
+  community.openwrt.uci:
+    command: set
+    key: network.iot.netmask
+    value: "{{ iot_netmask }}"
+
+- name: Commit network config
+  community.openwrt.uci:
+    command: commit
+    key: network
+
+- name: Reload network
+  community.openwrt.command:
+    cmd: /etc/init.d/network reload
+  changed_when: true

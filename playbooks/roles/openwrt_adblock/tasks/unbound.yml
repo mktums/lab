@@ -1,0 +1,107 @@
+---
+- name: Install unbound
+  action: "community.openwrt.{{ openwrt_package_manager }}"
+  args:
+    name: "unbound-daemon,unbound-anchor,luci-app-unbound"
+    state: present
+
+# Point dnsmasq at unbound for upstream resolution
+- name: Clear existing upstream DNS servers
+  community.openwrt.uci:
+    command: delete
+    key: dhcp.@dnsmasq[0].server
+  failed_when: false
+
+- name: Set dnsmasq upstream to unbound
+  community.openwrt.uci:
+    command: add_list
+    key: dhcp.@dnsmasq[0].server
+    value: "127.0.0.1#5335"
+  notify: Commit and restart dnsmasq
+
+- name: Prevent dnsmasq from using WAN DNS as fallback
+  community.openwrt.uci:
+    command: set
+    key: dhcp.@dnsmasq[0].noresolv
+    value: "1"
+  notify: Commit and restart dnsmasq
+
+- name: Disable dnsmasq DNSSEC
+  community.openwrt.uci:
+    command: set
+    key: dhcp.@dnsmasq[0].dnssec
+    value: "0"
+  notify: Commit and restart dnsmasq
+
+# Unbound UCI config
+- name: Configure unbound
+  community.openwrt.uci:
+    command: set
+    key: "unbound.@unbound[0].{{ item.key }}"
+    value: "{{ item.value }}"
+  loop:
+    - { key: listen_port,       value: "5335" }
+    - { key: validator,         value: "1" }
+    - { key: validator_ntp,     value: "1" }
+    - { key: prefetch,          value: "1" }
+    - { key: prefetch_root,     value: "1" }
+    - { key: rebind_protection, value: "1" }
+    - { key: hide_binddata,     value: "1" }
+    - { key: query_minimize,    value: "1" }
+  notify: Commit and restart unbound
+
+# Disable built-in zones — we use unbound_ext.conf for full control
+- name: Disable built-in DoT zones
+  community.openwrt.uci:
+    command: set
+    key: "{{ item }}"
+    value: "0"
+  loop:
+    - unbound.fwd_cloudflare.enabled
+    - unbound.fwd_google.enabled
+  notify: Commit and restart unbound
+
+- name: Deploy multi-provider DoT forward zone via unbound_ext.conf
+  community.openwrt.copy:
+    content: |
+      forward-zone:
+        name: "."
+        forward-tls-upstream: yes
+        forward-addr: 1.1.1.1@853#cloudflare-dns.com
+        forward-addr: 1.0.0.1@853#cloudflare-dns.com
+        forward-addr: 8.8.8.8@853#dns.google
+        forward-addr: 8.8.4.4@853#dns.google
+    dest: /etc/unbound/unbound_ext.conf
+  notify: Commit and restart unbound
+
+- name: Disable ISP DNS push on WAN
+  community.openwrt.uci:
+    command: set
+    key: "{{ item }}"
+    value: "0"
+  loop:
+    - network.wan.peerdns
+    - network.wan6.peerdns
+  notify: Commit and restart network
+
+- name: Enable unbound service
+  community.openwrt.command:
+    cmd: sh -c '/etc/init.d/unbound enabled || /etc/init.d/unbound enable'
+  register: _unbound_enable
+  changed_when: _unbound_enable.rc == 0 and 'enabled' not in _unbound_enable.stdout
+
+- name: Start unbound service
+  community.openwrt.command:
+    cmd: sh -c '/etc/init.d/unbound running || /etc/init.d/unbound start'
+  register: _unbound_start
+  changed_when: "'running' not in _unbound_start.stdout"
+
+- name: Flush handlers before verifying unbound
+  ansible.builtin.meta: flush_handlers
+
+- name: Verify unbound resolves DNS
+  community.openwrt.command:
+    cmd: drill @127.0.0.1 -p 5335 one.one.one.one
+  register: _unbound_verify
+  changed_when: false
+  failed_when: _unbound_verify.rc != 0

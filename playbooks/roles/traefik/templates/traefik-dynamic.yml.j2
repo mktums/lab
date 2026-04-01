@@ -1,0 +1,18 @@
+http:
+  routers:
+    traefik-dashboard:
+      rule: "Host(`traefik.{{ inventory_hostname }}.{{ lan_domain }}`)"
+      entrypoints:
+        - websecure
+      tls:
+        certResolver: step-ca
+      service: api@internal
+      middlewares:
+        - dashboard-auth
+
+  middlewares:
+    dashboard-auth:
+      basicAuth:
+        users:
+          - "{{ traefik_dashboard_user }}:{{ traefik_dashboard_password | password_hash('bcrypt', vault_bcrypt_salt) }}"
+

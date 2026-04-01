@@ -1,0 +1,6 @@
+---
+- name: Restart Portainer
+  community.docker.docker_container:
+    name: portainer
+    state: started
+    restart: true

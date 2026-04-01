@@ -1,0 +1,88 @@
+---
+# Registers a Portainer Edge environment for a remote host.
+# All URI tasks delegate to localhost (the Ansible controller) — become: false required
+# to avoid sudo being invoked on the controller.
+
+- name: Check if Portainer is reachable
+  ansible.builtin.uri:
+    url: "https://portainer.{{ lan_domain }}/api/status"
+    validate_certs: false
+    status_code: 200
+  register: _portainer_status
+  failed_when: false
+  delegate_to: localhost
+  become: false
+
+- name: Skip edge registration if Portainer is not up
+  ansible.builtin.meta: end_host
+  when: _portainer_status.status != 200
+
+- name: Authenticate with Portainer API
+  ansible.builtin.uri:
+    url: "https://portainer.{{ lan_domain }}/api/auth"
+    method: POST
+    body_format: json
+    body:
+      username: "admin"
+      password: "{{ portainer_admin_password }}"
+    validate_certs: false
+    status_code: 200
+  register: _portainer_auth
+  delegate_to: localhost
+  become: false
+  no_log: true
+
+- name: Check if edge environment already exists
+  ansible.builtin.uri:
+    url: "https://portainer.{{ lan_domain }}/api/endpoints"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ _portainer_auth.json.jwt }}"
+    validate_certs: false
+    status_code: 200
+  register: _portainer_endpoints
+  delegate_to: localhost
+  become: false
+
+- name: Find existing edge environment for this host
+  ansible.builtin.set_fact:
+    _existing_edge: >-
+      {{ _portainer_endpoints.json | selectattr('Name', 'equalto', inventory_hostname) | list | first | default({}) }}
+
+- name: Register new edge environment in Portainer
+  ansible.builtin.uri:
+    url: "https://portainer.{{ lan_domain }}/api/endpoints"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ _portainer_auth.json.jwt }}"
+    body_format: form-multipart
+    body:
+      Name: "{{ inventory_hostname }}"
+      EndpointCreationType: "4"
+      URL: "https://portainer.{{ lan_domain }}"
+      TunnelServerAddr: "portainer.{{ lan_domain }}:8000"
+    validate_certs: false
+    status_code: 200
+  register: _portainer_new_endpoint
+  delegate_to: localhost
+  become: false
+  when: _existing_edge.EdgeKey is not defined
+
+- name: Set edge key and ID facts on edge host
+  ansible.builtin.set_fact:
+    portainer_edge_key: "{{ _existing_edge.EdgeKey | default(_portainer_new_endpoint.json.EdgeKey) }}"
+    portainer_edge_id: "{{ _existing_edge.Id | default(_portainer_new_endpoint.json.Id) }}"
+
+- name: Set PublicURL for this edge environment
+  ansible.builtin.uri:
+    url: "https://portainer.{{ lan_domain }}/api/endpoints/{{ portainer_edge_id }}"
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ _portainer_auth.json.jwt }}"
+    body_format: json
+    body:
+      PublicURL: "{{ inventory_hostname }}.{{ lan_domain }}"
+    validate_certs: false
+    status_code: 200
+  delegate_to: localhost
+  become: false

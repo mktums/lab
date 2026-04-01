@@ -1,0 +1,8 @@
+---
+- name: Deploy Postgres
+  hosts: postgres_hosts
+  become: true
+  vars_files:
+    - ../../vault/secrets.yml
+  roles:
+    - role: postgres

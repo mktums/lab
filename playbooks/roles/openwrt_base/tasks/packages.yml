@@ -1,0 +1,6 @@
+---
+- name: Install packages
+  action: "community.openwrt.{{ openwrt_package_manager }}"
+  args:
+    name: "{{ openwrt_packages | join(',') }}"
+    state: present

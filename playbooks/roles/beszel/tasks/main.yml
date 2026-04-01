@@ -1,0 +1,5 @@
+---
+- ansible.builtin.include_tasks: hub.yml
+- ansible.builtin.include_tasks: init.yml
+- ansible.builtin.include_tasks: register.yml
+- ansible.builtin.include_tasks: cname.yml

@@ -1,0 +1,33 @@
+---
+- name: Register this host as edge environment in Portainer
+  ansible.builtin.include_tasks: edge_register.yml
+
+- name: Install step-ca root cert into system trust store
+  ansible.builtin.copy:
+    content: "{{ step_ca_root_cert_pem }}"
+    dest: /usr/local/share/ca-certificates/step-ca-root.crt
+    mode: "0644"
+  notify: Update CA certificates
+
+- name: Ensure CA certificates are up to date
+  ansible.builtin.command: update-ca-certificates
+  changed_when: false
+
+- name: Deploy Portainer Edge Agent container
+  community.docker.docker_container:
+    name: portainer_edge_agent
+    image: portainer/agent:latest
+    pull: missing
+    restart_policy: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+      - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
+      - /:/host
+    env:
+      EDGE: "1"
+      EDGE_ID: "{{ portainer_edge_id | string }}"
+      EDGE_KEY: "{{ portainer_edge_key }}"
+      EDGE_INSECURE_POLL: "1"
+      AGENT_CLUSTER_ADDR: ""
+  when: portainer_edge_key is defined and portainer_edge_key | length > 0
