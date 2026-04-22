@@ -2,7 +2,7 @@
 # ─── Dependency Chain ─────────────────────────────────────────────────
 # This playbook MUST be run in order. Plays are interdependent:
 #
-#   server_base    → Docker runtime + image pulls
+#   server_base    → Packages, SSH keys, timezone, locales, security hardening
 #   docker         → Docker Compose + NVIDIA Container Toolkit
 #   step_ca        → Internal CA (step-cli) installation
 #   install_ca_cert → Trust step-ca cert across servers
