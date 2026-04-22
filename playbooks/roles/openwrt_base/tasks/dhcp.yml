@@ -1,10 +1,12 @@
 ---
+# IPv6 — configurable via lan_ipv6_enabled (default: false, same as before)
 - name: Disable IPv6 leases on LAN
   community.openwrt.uci:
     command: set
     key: dhcp.lan.dhcpv6
     value: disabled
   notify: Commit and restart dnsmasq
+  when: not lan_ipv6_enabled | default(false)
 
 - name: Disable IPv6 RA on LAN
   community.openwrt.uci:
@@ -12,6 +14,7 @@
     key: dhcp.lan.ra
     value: disabled
   notify: Commit and restart dnsmasq
+  when: not lan_ipv6_enabled | default(false)
 
 - name: Set local domain
   community.openwrt.uci:

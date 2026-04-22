@@ -1,0 +1,21 @@
+---
+# Install step-ca root certificate on all servers to trust *.lan certificates
+# This runs AFTER step-ca container is deployed
+
+- name: Fetch root CA certificate from step-ca API (run once)
+  ansible.builtin.uri:
+    url: "https://step-ca.{{ lan_domain }}:8443/roots.pem"
+    return_content: true
+    validate_certs: false
+  register: _root_cert_response
+  run_once: true
+  changed_when: false
+  when: not ansible_check_mode
+
+- name: Install root CA into system trust store
+  ansible.builtin.copy:
+    content: "{{ _root_cert_response.content | trim }}"
+    dest: /usr/local/share/ca-certificates/step-ca-root.crt
+    mode: "0644"
+  notify: Update CA certificates
+  when: _root_cert_response is defined

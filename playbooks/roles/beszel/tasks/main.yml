@@ -2,4 +2,10 @@
 - ansible.builtin.include_tasks: hub.yml
 - ansible.builtin.include_tasks: init.yml
 - ansible.builtin.include_tasks: register.yml
-- ansible.builtin.include_tasks: cname.yml
+- name: Register Beszel CNAME
+  ansible.builtin.include_role:
+    name: common
+    tasks_from: register_cname
+  vars:
+    cname_name: "{{ beszel_cname_name | default('beszel.' + lan_domain) }}"
+    cname_target: "{{ beszel_cname_target | default(inventory_hostname + '.' + lan_domain) }}"

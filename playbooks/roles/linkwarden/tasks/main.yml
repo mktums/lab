@@ -1,4 +1,10 @@
 ---
 - ansible.builtin.include_tasks: db_init.yml
 - ansible.builtin.include_tasks: deploy.yml
-- ansible.builtin.include_tasks: cname.yml
+- name: Register Linkwarden CNAME
+  ansible.builtin.include_role:
+    name: common
+    tasks_from: register_cname
+  vars:
+    cname_name: "{{ linkwarden_cname_name | default('links.' + lan_domain) }}"
+    cname_target: "{{ linkwarden_cname_target | default(inventory_hostname + '.' + lan_domain) }}"

@@ -1,4 +1,10 @@
 ---
 - ansible.builtin.include_tasks: deploy.yml
-- ansible.builtin.include_tasks: cname.yml
 - ansible.builtin.include_tasks: init_envs.yml
+- name: Register Portainer CNAME
+  ansible.builtin.include_role:
+    name: common
+    tasks_from: register_cname
+  vars:
+    cname_name: "{{ portainer_cname_name | default('portainer.' + lan_domain) }}"
+    cname_target: "{{ portainer_cname_target | default(inventory_hostname + '.' + lan_domain) }}"

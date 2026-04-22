@@ -14,12 +14,12 @@
     pull: missing
     restart_policy: unless-stopped
     dns_servers:
-      - "172.17.0.1"
+      - "{{ lan_dns }}"
     volumes:
       - /data/docker/vaultwarden:/data
     env:
       DOMAIN: "https://vw.{{ lan_domain }}"
-      ADMIN_TOKEN: "{{ vault_vaultwarden_admin_token }}"
+      ADMIN_TOKEN: "{{ vaultwarden_admin_token }}"
       SIGNUPS_ALLOWED: "true"
       LOG_LEVEL: "warn"
     labels:

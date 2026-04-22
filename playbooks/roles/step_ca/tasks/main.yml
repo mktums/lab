@@ -1,5 +1,9 @@
 ---
 - ansible.builtin.include_tasks: deploy.yml
-- ansible.builtin.include_tasks: fingerprint.yml
-- ansible.builtin.include_tasks: trust.yml
-- ansible.builtin.include_tasks: cname.yml
+- name: Register step-ca CNAME
+  ansible.builtin.include_role:
+    name: common
+    tasks_from: register_cname
+  vars:
+    cname_name: "{{ step_ca_cname_name | default('step-ca.' + lan_domain) }}"
+    cname_target: "{{ step_ca_cname_target | default(inventory_hostname + '.' + lan_domain) }}"

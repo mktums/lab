@@ -1,0 +1,8 @@
+---
+- name: Install step-ca root certificate on all servers
+  hosts: servers
+  become: true
+  vars_files:
+    - ../vault/secrets.yml
+  roles:
+    - role: install_ca_cert

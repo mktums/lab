@@ -4,12 +4,8 @@
   become: true
   vars_files:
     - ../../vault/secrets.yml
-  pre_tasks:
-    - ansible.builtin.set_fact:
-        ca_ready: "{{ step_ca_root_cert_pem | length > 0 }}"
   roles:
     - role: beszel
-      when: ca_ready
 
 - name: Deploy Beszel agent
   hosts: beszel_agent_hosts

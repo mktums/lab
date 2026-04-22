@@ -2,22 +2,12 @@
 - name: Register {{ cname_name }} CNAME on router
   community.openwrt.uci:
     command: set
-    key: "dhcp.{{ cname_name | regex_replace('[^a-zA-Z0-9_]', '_') }}"
-    value: cname
-  delegate_to: "{{ groups['routers'][0] }}"
-
-- name: Set CNAME name
-  community.openwrt.uci:
-    command: set
-    key: "dhcp.{{ cname_name | regex_replace('[^a-zA-Z0-9_]', '_') }}.cname"
-    value: "{{ cname_name }}"
-  delegate_to: "{{ groups['routers'][0] }}"
-
-- name: Set CNAME target
-  community.openwrt.uci:
-    command: set
-    key: "dhcp.{{ cname_name | regex_replace('[^a-zA-Z0-9_]', '_') }}.target"
-    value: "{{ cname_target | default(inventory_hostname + '.' + lan_domain) }}"
+    key: "{{ item.key }}"
+    value: "{{ item.value }}"
+  loop:
+    - { key: "dhcp.{{ cname_name | regex_replace('[^a-zA-Z0-9_]', '_') }}", value: cname }
+    - { key: "dhcp.{{ cname_name | regex_replace('[^a-zA-Z0-9_]', '_') }}.cname", value: "{{ cname_name }}" }
+    - { key: "dhcp.{{ cname_name | regex_replace('[^a-zA-Z0-9_]', '_') }}.target", value: "{{ cname_target | default(inventory_hostname + '.' + lan_domain) }}" }
   delegate_to: "{{ groups['routers'][0] }}"
 
 - name: Commit dhcp config on router
@@ -30,4 +20,4 @@
   community.openwrt.command:
     cmd: /etc/init.d/dnsmasq restart
   delegate_to: "{{ groups['routers'][0] }}"
-  changed_when: true
+  changed_when: false

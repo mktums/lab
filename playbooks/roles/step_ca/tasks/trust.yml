@@ -11,11 +11,11 @@
 
 - name: Install root CA into system trust store
   ansible.builtin.copy:
-    content: "{{ _step_ca_root_cert.stdout }}"
+    content: "{{ _step_ca_root_cert.stdout | trim }}"
     dest: /usr/local/share/ca-certificates/step-ca-root.crt
     mode: "0644"
   notify: Update CA certificates
 
 - name: Ensure CA certificates are up to date
   ansible.builtin.command: update-ca-certificates
-  changed_when: false
+
