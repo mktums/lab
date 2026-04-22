@@ -7,6 +7,7 @@ collections:
   - name: community.openwrt
     version: ">=1.2.0"
   - name: community.docker
+  - name: community.postgresql
 
 roles:
   - name: geerlingguy.security

@@ -1,7 +1,7 @@
 ---
 admin_user: "{{ vault_admin_user }}"
 admin_ssh_pubkey: "{{ vault_admin_ssh_pubkey }}"
-ansible_user: "{{ vault_admin_user }}"
+ansible_user: "{{ admin_user }}"
 ansible_become_password: "{{ vault_become_password }}"
 
 # geerlingguy.security
@@ -10,7 +10,7 @@ security_ssh_permit_root_login: "no"
 security_ssh_password_authentication: "no"
 security_ssh_x11_forwarding: "no"
 security_ssh_allowed_users:
-  - "{{ vault_admin_user }}"
+  - "{{ admin_user }}"
 security_fail2ban_enabled: true
 security_autoupdate_enabled: true
 security_autoupdate_reboot: false
@@ -50,11 +50,13 @@ traefik_dashboard_password: "{{ vault_traefik_dashboard_password }}"
 # step-ca
 step_ca_port: 8443
 step_ca_name: "Homelab CA"
-step_ca_fingerprint: "{{ vault_step_ca_fingerprint | default('') }}"
-step_ca_root_cert_pem: "{{ vault_step_ca_root_cert_pem | default('') }}"
+step_ca_password: "{{ vault_step_ca_password }}"
 
 # Portainer
 portainer_admin_password: "{{ vault_portainer_admin_password }}"
+
+# Vaultwarden
+vaultwarden_admin_token: "{{ vault_vaultwarden_admin_token }}"
 
 # qBittorrent
 qbittorrent_password: "{{ vault_qbittorrent_password }}"

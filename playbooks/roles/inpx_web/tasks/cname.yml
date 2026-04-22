@@ -1,8 +1,0 @@
----
-- name: Register inpx-web CNAME
-  ansible.builtin.include_role:
-    name: common
-    tasks_from: register_cname
-  vars:
-    cname_name: "lib.{{ lan_domain }}"
-    cname_target: "{{ inventory_hostname }}.{{ lan_domain }}"

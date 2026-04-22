@@ -13,7 +13,7 @@
 
 - name: Write CA password file
   ansible.builtin.copy:
-    content: "{{ vault_step_ca_password }}"
+    content: "{{ step_ca_password }}"
     dest: /opt/step-ca/secrets/password
     owner: "1000"
     group: "1000"

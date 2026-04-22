@@ -7,7 +7,7 @@ beszel_smart_devices:
   - /dev/sdb:/dev/sdb
   - /dev/sdc:/dev/sdc
   - /dev/sdd:/dev/sdd
-  - /dev/nvme0:/dev/nvme0
+  - /dev/nvme0n0:/dev/nvme0n0
 beszel_smart_cap_add:
   - SYS_RAWIO
   - SYS_ADMIN

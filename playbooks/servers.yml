@@ -1,7 +1,23 @@
 ---
+# ─── Dependency Chain ─────────────────────────────────────────────────
+# This playbook MUST be run in order. Plays are interdependent:
+#
+#   server_base    → Docker runtime + image pulls
+#   docker         → Docker Compose + NVIDIA Container Toolkit
+#   step_ca        → Internal CA (step-cli) installation
+#   install_ca_cert → Trust step-ca cert across servers
+#   traefik         → Reverse proxy (required before any service using traefik labels)
+#   postgres       → Database server (shared by services that need it)
+#   [services]     → Individual service deployments
+#
+# Critical ordering:
+#   1. step_ca → install_ca_cert → traefik (cert generation)
+#   2. traefik → all services with traefik.enable: "true"
+# ────────────────────────────────────────────────────────────────────────
 - import_playbook: server_base.yml
 - import_playbook: docker.yml
 - import_playbook: services/step_ca.yml
+- import_playbook: install_ca_cert.yml
 - import_playbook: services/traefik.yml
 - import_playbook: services/beszel.yml
 - import_playbook: services/portainer.yml

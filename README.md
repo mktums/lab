@@ -28,10 +28,10 @@ Internet
     │
 ┌───┴─────────────────────────────────────┐
 │  router (Cudy WR3000S)  10.10.10.1      │
-│  OpenWrt 24.10                          │
+│  OpenWrt                                │
 │  DNS: unbound (127.0.0.1:5335)          │
-│       dnsmasq → unbound → DoT          │
-│       upstreams: Cloudflare + Google   │
+│       dnsmasq → unbound → DoT           │
+│       upstreams: Cloudflare + Google    │
 │  adblock-lean (medium preset)           │
 └───┬─────────────────┬───────────────────┘
     │ LAN             │ IoT
@@ -92,8 +92,7 @@ DNS (*.lan resolved by dnsmasq):
 
 ## Manual setup — do these in order
 
-These are one-time steps that must be done by hand. Ansible assumes they are
-already complete before it runs.
+These are one-time steps that must be done by hand. Ansible assumes they are already complete before it runs.
 
 ### 1. Router — set root password
 
@@ -118,103 +117,50 @@ Your SSH session will drop. Reconnect:
 ssh root@10.10.10.1
 ```
 
-### 3. Vault — add router SSH password
+### 3. Vault — add all secrets
 
 ```bash
 ansible-vault edit vault/secrets.yml
-# add: vault_router_ssh_pass: "your-root-password"
 ```
 
-### 4. Vault — add admin credentials
+Add all required variables — see the [Vault](#vault) section for the full list.
+
+### 4. Run site playbook
 
 ```bash
-ansible-vault edit vault/secrets.yml
-# add:
-#   vault_admin_user: "your-username"
-#   vault_admin_ssh_pubkey: "ssh-ed25519 AAAA..."
+ansible-playbook playbooks/site.yml
 ```
 
-### 5. Run router playbook
+This runs both `router.yml` (OpenWrt configuration) and `servers.yml` (step-ca init, all services). You can also run them separately:
 
 ```bash
-ansible-playbook playbooks/router.yml
+ansible-playbook playbooks/router.yml    # router only
+ansible-playbook playbooks/servers.yml   # servers only
 ```
 
-### 6. Vault — add service passwords
+> The router playbook does not support `--check` mode.
 
-```bash
-ansible-vault edit vault/secrets.yml
-# add (all default to vault_main_password, override individually if needed):
-#   vault_traefik_dashboard_password: "{{ vault_main_password }}"
-#   vault_portainer_admin_password: "{{ vault_main_password }}"
-#   vault_vaultwarden_admin_token: "{{ vault_main_password }}"
-#   vault_qbittorrent_password: "{{ vault_main_password }}"
-#   vault_step_ca_password: "{{ vault_main_password }}"
-```
+### 5. Install root CA on your devices
 
-### 7. Run servers playbook (first time — step-ca init)
-
-```bash
-ansible-playbook playbooks/servers.yml
-```
-
-step-ca starts and initialises. All plays that require a CA cert are skipped
-on this run because `vault_step_ca_root_cert_pem` is not yet set.
-
-### 8. Vault — add step-ca fingerprint and root cert
-
-```bash
-# Get the root cert (also saves it locally for device trust)
-scp lab1:/data/docker/step-ca/certs/root_ca.crt homelab-ca.crt
-
-# Get the fingerprint
-ssh lab1 "openssl x509 -in /data/docker/step-ca/certs/root_ca.crt \
-  -noout -fingerprint -sha256 | cut -d= -f2 | tr -d ':' | tr '[:upper:]' '[:lower:]'"
-```
-
-```bash
-ansible-vault edit vault/secrets.yml
-# add:
-#   vault_step_ca_fingerprint: "<fingerprint from above>"
-#   vault_step_ca_root_cert_pem: |
-#     -----BEGIN CERTIFICATE-----
-#     ...
-#     -----END CERTIFICATE-----
-```
-
-### 9. Install root CA on your devices
-
-You already have `homelab-ca.crt` locally from the previous step.
+Copy the root certificate from lab1: `scp lab1:/data/docker/step-ca/certs/root_ca.crt .`
 
 | Device | How to install |
 |--------|----------------|
 | Linux | `sudo cp homelab-ca.crt /usr/local/share/ca-certificates/ && sudo update-ca-certificates` |
 | macOS | `sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain homelab-ca.crt` |
 | Windows | Double-click `homelab-ca.crt` → Install Certificate → **Local Machine** → **Trusted Root Certification Authorities** → Finish. Restart Chrome/Edge (`chrome://restart`). |
-| Android | Settings → Security → Install certificate |
+| Android | Settings → Security → install certificate |
 | iOS | AirDrop or email the file → tap to install → Settings → General → VPN & Device Management → trust it |
 
-Do this once per device. After this, all `*.lan` HTTPS services will show a
-green padlock with no warnings.
+Do this once per device. After this, all `*.lan` HTTPS services will show a green padlock with no warnings.
 
-### 10. Run servers playbook (second time — full deploy)
-
-```bash
-ansible-playbook playbooks/servers.yml
-```
-
-Traefik starts on each docker host, requests certs from step-ca, and all
-services come up behind HTTPS.
-
-> After first deploy, visit `https://beszel.lan`, log in, then:
+> After deployment, visit `https://beszel.lan`, log in, then:
+>
 > 1. Settings → Tokens → create a token → add to `vault_beszel_token`
 > 2. Add System → copy the public key → add to `vault_beszel_hub_key`
 > 3. Re-run `ansible-playbook playbooks/services/beszel.yml` to deploy agents
 >
-> **S.M.A.R.T. monitoring**: The Beszel agent is configured with S.M.A.R.T. device mappings
-> and capabilities (`SYS_RAWIO`, `SYS_ADMIN`) for disk health monitoring. Additional filesystems
-> can be monitored by adding extra volume mounts in `inventory/host_vars/<host>.yml`:
->
+> **S.M.A.R.T. monitoring**: The Beszel agent is configured with S.M.A.R.T. device mappings and capabilities (`SYS_RAWIO`, `SYS_ADMIN`) for disk health monitoring. Additional filesystems can be monitored by adding extra volume mounts in `inventory/host_vars/<host>.yml`:
 > ```yaml
 > beszel_smart_devices:
 >   - /dev/sda:/dev/sda
@@ -225,6 +171,8 @@ services come up behind HTTPS.
 > beszel_extra_volumes:
 >   - /data/.beszel:/extra-filesystems/sda1:ro
 > ```
+>
+> **Note**: `beszel.yml` deploys the hub container on lab1 and agent containers on both lab1 and lab2. The hub token and hub key are configured separately from the agent credentials.
 
 ---
 
@@ -242,48 +190,80 @@ Store the vault password in `.vault_pass` (gitignored) for passwordless runs:
 echo "your-vault-password" > .vault_pass && chmod 600 .vault_pass
 ```
 
-Expected vault structure:
+Expected vault variables:
 
 ```yaml
-vault_main_password: "..."          # master password, reused by default everywhere
-vault_bcrypt_salt: "....................."  # exactly 22 chars of [./A-Za-z0-9]
-                                           # generate: python3 -c "import bcrypt; print(bcrypt.gensalt()[7:].decode())"
+# ── Common ──────────────────────────────────────────────────────────────────
 
+# bcrypt salt for password hashing (exactly 22 chars of [./A-Za-z0-9])
+# generate: python3 -c "import bcrypt; print(bcrypt.gensalt()[7:].decode())"
+vault_bcrypt_salt: ".................."
+
+# Admin user credentials
 vault_admin_user: "..."
 vault_admin_ssh_pubkey: "ssh-ed25519 AAAA..."
 
-vault_router_ssh_pass: "{{ vault_main_password }}"
+# ── Router (openwrt_base) ──────────────────────────────────────────────────
 
-vault_wifi_main_password: "..."
-vault_wifi_iot_password: "..."
+# SSH password for router root user
+vault_router_ssh_pass: "..."
 
-vault_step_ca_password: "{{ vault_main_password }}"
-vault_step_ca_fingerprint: ""        # populated after first run
-vault_step_ca_root_cert_pem: |       # populated after first run
-  -----BEGIN CERTIFICATE-----
-  ...
-  -----END CERTIFICATE-----
+# Wi-Fi passwords
+vault_wifi_main_password: "..."    # Main network (WPA3/WPA2)
+vault_wifi_iot_password: "..."     # IoT network (WPA2)
 
-vault_traefik_dashboard_password: "{{ vault_main_password }}"
-vault_portainer_admin_password: "{{ vault_main_password }}"
-vault_vaultwarden_admin_token: "{{ vault_main_password }}"
-vault_qbittorrent_password: "{{ vault_main_password }}"
-vault_postgres_password: "{{ vault_main_password }}"
-vault_linkwarden_nextauth_secret: ""   # generate: openssl rand -hex 32
-vault_linkwarden_meili_master_key: ""  # generate: openssl rand -hex 32
-vault_linkwarden_db_password: "{{ vault_main_password }}"
-vault_beszel_admin_email: "..."        # email for Beszel admin user
-vault_beszel_admin_password: "{{ vault_main_password }}"
-vault_beszel_token: ""                 # from Beszel UI: Settings → Tokens
-vault_beszel_hub_key: ""               # from Beszel UI: Add System → public key
-```
+# ── step-ca ────────────────────────────────────────────────────────────────
 
-Common commands:
+# Password for step-ca ACME account
+vault_step_ca_password: "..."
 
-```bash
-ansible-vault edit vault/secrets.yml
-ansible-vault view vault/secrets.yml
-ansible-vault rekey vault/secrets.yml
+# ── Traefik ────────────────────────────────────────────────────────────────
+
+# Password for Traefik dashboard (basic auth)
+vault_traefik_dashboard_password: "..."
+
+# ── Beszel ─────────────────────────────────────────────────────────────────
+
+# Admin user credentials
+vault_beszel_admin_email: "..."
+vault_beszel_admin_password: "..."
+
+# Hub token (from Beszel UI: Settings → Tokens)
+vault_beszel_token: ""
+
+# Hub public key (from Beszel UI: Add System → public key)
+vault_beszel_hub_key: ""
+
+# ── Portainer ──────────────────────────────────────────────────────────────
+
+# Admin password for Portainer
+vault_portainer_admin_password: "..."
+
+# ── Vaultwarden ────────────────────────────────────────────────────────────
+
+# Admin emergency token (set via Vaultwarden web UI after first login)
+vault_vaultwarden_admin_token: "..."
+
+# ── qBittorrent ────────────────────────────────────────────────────────────
+
+# Admin password for qBittorrent
+vault_qbittorrent_password: "..."
+
+# ── Postgres ───────────────────────────────────────────────────────────────
+
+# Password for the default database user
+vault_postgres_password: "..."
+
+# ── Linkwarden ─────────────────────────────────────────────────────────────
+
+# NextAuth secret (generate: openssl rand -hex 32)
+vault_linkwarden_nextauth_secret: ""
+
+# MeiliSearch master key (generate: openssl rand -hex 32)
+vault_linkwarden_meili_master_key: ""
+
+# Database password for Linkwarden
+vault_linkwarden_db_password: "..."
 ```
 
 ---
@@ -298,10 +278,17 @@ ansible-playbook playbooks/router.yml
 ansible-playbook playbooks/server_base.yml
 ansible-playbook playbooks/docker.yml
 
-# Single service
+# Single services
 ansible-playbook playbooks/services/traefik.yml
+ansible-playbook playbooks/services/beszel.yml      # hub + agents
+ansible-playbook playbooks/services/portainer.yml
+ansible-playbook playbooks/services/vaultwarden.yml
+ansible-playbook playbooks/services/qbittorrent.yml
 ansible-playbook playbooks/services/inpx_web.yml
-# ... etc
+ansible-playbook playbooks/services/postgres.yml
+ansible-playbook playbooks/services/linkwarden.yml
+ansible-playbook playbooks/services/step_ca.yml
+ansible-playbook playbooks/services/portainer_edge.yml
 
 # All servers (base + all services)
 ansible-playbook playbooks/servers.yml
@@ -320,15 +307,11 @@ The router playbook does not support `--check` mode.
 
 Each server generates and activates three locales: `en_US.UTF-8`, `en_DK.UTF-8`, `ru_RU.UTF-8`.
 
-`en_DK.UTF-8` is used as `LANG` — it's English language with ISO 8601 conventions (YYYY-MM-DD dates,
-24h clock, dot decimal separator, Monday-first weeks). Denmark locale is the traditional Linux choice
-for "international English" — same as `en_US` for language, but sane date/number formats.
+`en_DK.UTF-8` is used as `LANG` — it's English language with ISO 8601 conventions (YYYY-MM-DD dates, 24h clock, dot decimal separator, Monday-first weeks). Denmark locale is the traditional Linux choice for "international English" — same as `en_US` for language, but sane date/number formats.
 
-`LC_MESSAGES` is pinned to `en_US.UTF-8` because `en_DK` message catalogs are sparse and some tools
-fall back to untranslated output.
+`LC_MESSAGES` is pinned to `en_US.UTF-8` because `en_DK` message catalogs are sparse and some tools fall back to untranslated output.
 
-`LC_COLLATE` and `LC_CTYPE` use `ru_RU.UTF-8` so Cyrillic filenames (e.g. book archives) sort
-alphabetically rather than by raw Unicode codepoint.
+`LC_COLLATE` and `LC_CTYPE` use `ru_RU.UTF-8` so Cyrillic filenames (e.g. book archives) sort alphabetically rather than by raw Unicode codepoint.
 
 ```
 LANG=en_DK.UTF-8        # ISO dates/numbers, English language
@@ -348,12 +331,12 @@ LC_CTYPE=ru_RU.UTF-8    # Cyrillic recognized as valid letters
 
 ### New service
 
-1. Create `playbooks/roles/<service>/` with `tasks/main.yml`, `tasks/deploy.yml`,
-   `tasks/cname.yml`, `handlers/main.yml`
-2. Add a group under `children` in `inventory/hosts.yml`
-3. Add a play to `playbooks/servers.yml`
-4. Add any secrets to `vault/secrets.yml` and vars to `inventory/group_vars/servers.yml`
-5. Run `ansible-playbook playbooks/servers.yml`
+1. Create `playbooks/roles/<service>/` with `tasks/main.yml` (and `tasks/deploy.yml` if needed), `handlers/main.yml`
+2. Add CNAME registration in `tasks/main.yml` using `include_role: common` with `tasks_from: register_cname`
+3. Add a group under `children` in `inventory/hosts.yml`
+4. Add a play to `playbooks/servers.yml`
+5. Add any secrets to `vault/secrets.yml` and vars to `inventory/group_vars/servers.yml`
+6. Run `ansible-playbook playbooks/servers.yml`
 
 Minimal Traefik labels for a new container:
 
@@ -373,20 +356,15 @@ labels:
 
 **`DNS_PROBE_FINISHED_NXDOMAIN` for `*.lan` in Chrome/Edge**
 
-Chromium-based browsers have a "Use secure DNS" (DoH) setting that bypasses
-the system resolver and sends queries to a public DNS provider, which has no
-knowledge of your local `.lan` domain.
+Chromium-based browsers have a "Use secure DNS" (DoH) setting that bypasses the system resolver and sends queries to a public DNS provider, which has no knowledge of your local `.lan` domain.
 
-Disable it: `chrome://settings/security` → "Use secure DNS" → off.
-Same for Edge: `edge://settings/privacy` → "Use secure DNS" → off.
+Disable it: `chrome://settings/security` → "Use secure DNS" → off. Same for Edge: `edge://settings/privacy` → "Use secure DNS" → off.
 
 **ACME cert not issuing / Traefik serving default cert**
 
-step-ca needs to reach the Traefik host on port 443 to complete the
-TLS-ALPN-01 challenge. Make sure:
+step-ca needs to reach the Traefik host on port 443 to complete the TLS-ALPN-01 challenge. Make sure:
 
-- step-ca container uses the router (`{{ lan_dns }}`) as its DNS server,
-  not `172.17.0.1` (Docker bridge DNS doesn't resolve `.lan`)
+- step-ca container uses the router (`{{ lan_dns }}`) as its DNS server, not `172.17.0.1` (Docker bridge DNS doesn't resolve `.lan`)
 - Port 443 is reachable on the Traefik host from lab1
 - `acme.json` has `600` permissions — if corrupt, delete it and restart Traefik
 

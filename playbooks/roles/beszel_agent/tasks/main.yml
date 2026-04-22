@@ -7,6 +7,7 @@
   loop: "{{ beszel_extra_volumes | default([]) }}"
   when: beszel_extra_volumes | default([]) | length > 0
 
+# Build Beszel agent volumes list - docker socket is read-only for security
 - name: Build Beszel agent volumes list
   ansible.builtin.set_fact:
     beszel_agent_volumes: >-
@@ -15,30 +16,38 @@
         + (beszel_extra_volumes | default([]) | list) 
       }}
 
+# Build Beszel agent environment - use NVML (officially recommended for power-saving RTD3 support)
 - name: Build Beszel agent environment
   ansible.builtin.set_fact:
     beszel_agent_env: >-
       {{ 
         {
           'LISTEN': '45876',
-          'HUB_URL': 'http://lab1.' + lan_domain + ':8090',
+          'HUB_URL': 'http://{{ beszel_hub_host }}:{{ beszel_hub_port | default(8090) }}',
           'TOKEN': beszel_token,
           'KEY': beszel_hub_key,
           'DISK_USAGE_CACHE': '1h'
         }
-        | combine({'GPU_COLLECTOR': 'nvml'} if nvidia_gpu | default(false) else {}) 
+        | combine({'GPU_COLLECTOR': 'nvml'} if nvidia_gpu | default(false) == true else {}) 
       }}
 
+# Deploy Beszel agent container (remote) - use NVIDIA Container Toolkit for GPU access
 - name: Deploy Beszel agent container (remote)
   community.docker.docker_container:
     name: beszel-agent
-    image: "{{ 'henrygd/beszel-agent-nvidia' if nvidia_gpu | default(false) else 'henrygd/beszel-agent:alpine' }}"
+    image: "{{ 'henrygd/beszel-agent-nvidia' if nvidia_gpu | default(false) == true else 'henrygd/beszel-agent:alpine' }}"
     pull: missing
     restart_policy: unless-stopped
     network_mode: host
-    device_requests: "{{ [{'count': -1, 'capabilities': [['gpu']]}] if nvidia_gpu | default(false) else omit }}"
-    devices: "{{ beszel_smart_devices | default(omit) }}"
-    capabilities: "{{ beszel_smart_cap_add | default(omit) }}"
+    # Use NVIDIA runtime for GPU access (requires nvidia-container-toolkit installed on host)
+    device_requests: >-
+      {{ [{'count': -1, 'capabilities': [['gpu']]}] if nvidia_gpu | default(false) == true else omit }}
     volumes: "{{ beszel_agent_volumes }}"
     env: "{{ beszel_agent_env }}"
+    labels:
+      io.beszel.agent: "true"
+      io.beszel.hostname: "{{ inventory_hostname }}"
+    # Note: device_requests always shows as changed due to Docker serialization quirks
+    # Use recreate=false to avoid unnecessary container recreation on every run
+    recreate: false
   when: beszel_token | default('') | length > 0

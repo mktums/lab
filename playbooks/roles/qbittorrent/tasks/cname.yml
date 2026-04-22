@@ -1,8 +1,0 @@
----
-- name: Register qbit{{ lab_index }}.lan CNAME on router
-  ansible.builtin.include_role:
-    name: common
-    tasks_from: register_cname
-  vars:
-    cname_name: "qbit{{ lab_index }}.{{ lan_domain }}"
-    cname_target: "{{ inventory_hostname }}.{{ lan_domain }}"

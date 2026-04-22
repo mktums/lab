@@ -5,12 +5,33 @@
     state: directory
     mode: "0755"
 
+- name: Ensure linkwarden Docker network exists
+  community.docker.docker_network:
+    name: linkwarden
+    state: present
+
+- name: Write Linkwarden .env file
+  ansible.builtin.copy:
+    content: |
+      NEXTAUTH_SECRET={{ linkwarden_nextauth_secret }}
+      NEXTAUTH_URL=https://links.{{ lan_domain }}/api/v1/auth
+      BASE_URL=https://links.{{ lan_domain }}
+      DATABASE_URL=postgresql://linkwarden:{{ linkwarden_db_password }}@db.{{ lan_domain }}:5432/linkwarden
+      MEILI_HOST=http://meilisearch:7700
+      MEILI_MASTER_KEY={{ linkwarden_meili_master_key }}
+      STORAGE_FOLDER=/data
+    dest: /data/docker/linkwarden/.env
+    mode: "0600"
+    backup: true
+
 - name: Deploy Meilisearch container
   community.docker.docker_container:
     name: meilisearch
     image: getmeili/meilisearch:latest
     pull: missing
     restart_policy: unless-stopped
+    networks:
+      - name: linkwarden
     volumes:
       - /data/docker/linkwarden/meilisearch:/meili_data
     env:
@@ -24,20 +45,12 @@
     image: ghcr.io/linkwarden/linkwarden:latest
     pull: missing
     restart_policy: unless-stopped
-    dns_servers:
-      - "{{ lan_dns }}"
+    networks:
+      - name: linkwarden
     volumes:
       - /data/docker/linkwarden/data:/data/data
-    env:
-      NEXTAUTH_SECRET: "{{ linkwarden_nextauth_secret }}"
-      NEXTAUTH_URL: "https://links.{{ lan_domain }}/api/v1/auth"
-      BASE_URL: "https://links.{{ lan_domain }}"
-      DATABASE_URL: "postgresql://linkwarden:{{ linkwarden_db_password }}@db.{{ lan_domain }}:5432/linkwarden"
-      MEILI_HOST: "http://meilisearch:7700"
-      MEILI_MASTER_KEY: "{{ linkwarden_meili_master_key }}"
-      STORAGE_FOLDER: "/data"
-    links:
-      - meilisearch
+    env_file:
+      - /data/docker/linkwarden/.env
     labels:
       traefik.enable: "true"
       traefik.http.routers.linkwarden.rule: "Host(`links.{{ lan_domain }}`)"

@@ -28,21 +28,6 @@
   ansible.builtin.set_fact:
     _existing_system_names: "{{ _existing_systems.json['items'] | map(attribute='name') | list }}"
 
-- name: Register lab1 (local socket)
-  ansible.builtin.uri:
-    url: "http://localhost:8090/api/collections/systems/records"
-    method: POST
-    headers:
-      Authorization: "{{ _beszel_user_auth.json.token }}"
-    body_format: json
-    body:
-      name: "lab1"
-      host: "/beszel_socket/beszel.sock"
-      port: 45876
-      users: ["{{ _beszel_user_auth.json.record.id }}"]
-    status_code: 200
-  when: "'lab1' not in _existing_system_names"
-
 - name: Register remote systems
   ansible.builtin.uri:
     url: "http://localhost:8090/api/collections/systems/records"

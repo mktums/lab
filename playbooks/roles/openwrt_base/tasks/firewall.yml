@@ -6,14 +6,14 @@
     cmd: >-
       sh -c 'uci show firewall.lan_zone > /dev/null 2>&1 ||
       uci rename firewall.@zone[0]=lan_zone'
-  changed_when: true
+  changed_when: false
 
 - name: Rename default WAN zone to named section
   community.openwrt.command:
     cmd: >-
       sh -c 'uci show firewall.wan_zone > /dev/null 2>&1 ||
       uci rename firewall.@zone[1]=wan_zone'
-  changed_when: true
+  changed_when: false
 
 # LAN zone
 - name: Set LAN zone name

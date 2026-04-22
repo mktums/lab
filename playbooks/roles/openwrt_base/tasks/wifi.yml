@@ -55,7 +55,6 @@
     key: "wireless.{{ item.name }}"
     value: wifi-iface
   loop: "{{ wifi_interfaces }}"
-  no_log: true
   notify: Commit and reload wifi
 
 - name: Set wifi-iface device
@@ -64,7 +63,6 @@
     key: "wireless.{{ item.name }}.device"
     value: "{{ item.radio }}"
   loop: "{{ wifi_interfaces }}"
-  no_log: true
   notify: Commit and reload wifi
 
 - name: Set wifi-iface mode
@@ -73,7 +71,6 @@
     key: "wireless.{{ item.name }}.mode"
     value: ap
   loop: "{{ wifi_interfaces }}"
-  no_log: true
   notify: Commit and reload wifi
 
 - name: Set wifi-iface network
@@ -82,7 +79,6 @@
     key: "wireless.{{ item.name }}.network"
     value: "{{ item.network }}"
   loop: "{{ wifi_interfaces }}"
-  no_log: true
   notify: Commit and reload wifi
 
 - name: Set wifi-iface SSID
@@ -91,7 +87,6 @@
     key: "wireless.{{ item.name }}.ssid"
     value: "{{ item.ssid }}"
   loop: "{{ wifi_interfaces }}"
-  no_log: true
   notify: Commit and reload wifi
 
 - name: Set wifi-iface encryption
@@ -100,7 +95,6 @@
     key: "wireless.{{ item.name }}.encryption"
     value: "{{ item.encryption }}"
   loop: "{{ wifi_interfaces }}"
-  no_log: true
   notify: Commit and reload wifi
 
 - name: Set wifi-iface password
@@ -118,5 +112,4 @@
     key: "wireless.{{ item.name }}.hidden"
     value: "{{ '1' if item.hidden else '0' }}"
   loop: "{{ wifi_interfaces }}"
-  no_log: true
   notify: Commit and reload wifi
