@@ -1,4 +1,8 @@
 ---
+system_optimize_mounts:
+  - /
+  - /data
+
 # Beszel agent configuration for lab2
 beszel_smart_devices:
   - /dev/sda:/dev/sda

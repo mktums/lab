@@ -1,0 +1,46 @@
+---
+- name: System | Set swappiness and cache pressure
+  ansible.builtin.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: true
+    sysctl_file: /etc/sysctl.d/99-homelab.conf
+  loop:
+    - { key: 'vm.swappiness', value: "10" }
+    - { key: 'vm.vfs_cache_pressure', value: "50" }
+
+- name: System | Enable fstrim.timer
+  ansible.builtin.systemd:
+    name: fstrim.timer
+    state: started
+    enabled: yes
+
+- name: System | Create Zswap configuration file
+  ansible.builtin.copy:
+    content: |
+      # Managed by Ansible
+      GRUB_CMDLINE_LINUX_DEFAULT="$GRUB_CMDLINE_LINUX_DEFAULT zswap.enabled=1 zswap.compressor=zstd zswap.max_pool_percent=25"
+    dest: /etc/default/grub.d/99-zswap.cfg
+    mode: '0644'
+  register: zswap_grub_cfg
+  when: system_zswap_enabled | default(false) | bool
+
+- name: System | Update GRUB
+  ansible.builtin.command: /usr/sbin/update-grub
+  when: zswap_grub_cfg.changed
+  changed_when: zswap_grub_cfg.changed
+  notify: "System | Notify reboot required"
+
+- name: System | Optimize mount options
+  ansible.builtin.mount:
+    path: "{{ item }}"
+    src: "{{ (ansible_mounts | selectattr('mount', 'equalto', item) | first).device | default('') }}"
+    fstype: "{{ (ansible_mounts | selectattr('mount', 'equalto', item) | first).fstype | default('auto') }}"
+    opts: "{{ (ansible_mounts | selectattr('mount', 'equalto', item) | first).options }},noatime"
+    state: mounted
+    fstab: /etc/fstab
+  loop: "{{ system_optimize_mounts | default(['/']) }}"
+  when:
+    - item in ansible_mounts | map(attribute='mount') | list
+    - "'noatime' not in (ansible_mounts | selectattr('mount', 'equalto', item) | first).options"

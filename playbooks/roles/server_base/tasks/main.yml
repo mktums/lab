@@ -1,6 +1,7 @@
 ---
 - ansible.builtin.include_tasks: packages.yml
 - ansible.builtin.include_tasks: ssh_keys.yml
+- ansible.builtin.include_tasks: tuning.yml
 
 - name: Set timezone
   community.general.timezone:

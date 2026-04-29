@@ -15,6 +15,13 @@ security_fail2ban_enabled: true
 security_autoupdate_enabled: true
 security_autoupdate_reboot: false
 
+# Swap
+system_swappiness: 10
+system_vfs_cache_pressure: 50
+system_zswap_enabled: true
+system_optimize_mounts:
+  - /
+
 common_packages:
   - bash-completion
   - vim
@@ -40,6 +47,8 @@ common_packages:
   - wget
   - ncdu
   - tmux
+  - dmidecode
+  - pciutils
 
 docker_users:
   - "{{ admin_user }}"

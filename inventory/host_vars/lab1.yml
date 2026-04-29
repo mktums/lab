@@ -1,6 +1,11 @@
 ---
 nvidia_gpu: true
 
+system_optimize_mounts:
+  - /
+  - /mnt/reds
+  - /mnt/green
+
 # Beszel agent configuration
 beszel_smart_devices:
   - /dev/sda:/dev/sda
