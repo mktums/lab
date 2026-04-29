@@ -12,7 +12,7 @@
         msg: >
           The router playbook does not support --check mode.
           Re-run without --check.
-      when: ansible_check_mode
+      when: ansible_facts['ansible_check_mode']
 
   roles:
     - role: community.openwrt.init
