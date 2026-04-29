@@ -8,8 +8,8 @@
     network_mode: host
     device_requests: "{{ [{'count': -1, 'capabilities': [['gpu']]}] if nvidia_gpu | default(false) else omit }}"
     volumes:
-      - /data/docker/beszel/agent:/var/lib/beszel-agent
-      - /data/docker/beszel/socket:/beszel_socket
+      - /srv/docker_data/beszel/agent:/var/lib/beszel-agent
+      - /srv/docker_data/beszel/socket:/beszel_socket
       - /var/run/docker.sock:/var/run/docker.sock:ro
     env: >-
       {{

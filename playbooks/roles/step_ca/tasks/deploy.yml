@@ -7,9 +7,9 @@
     group: "{{ item.owner }}"
     mode: "{{ item.mode }}"
   loop:
-    - { path: /data/docker/step-ca, owner: "1000", mode: "0700" }
-    - { path: /opt/step-ca,         owner: "root", mode: "0700" }
-    - { path: /opt/step-ca/secrets, owner: "1000", mode: "0700" }
+    - { path: /srv/docker_data/step-ca, owner: "1000", mode: "0700" }
+    - { path: /opt/step-ca,             owner: "root", mode: "0700" }
+    - { path: /opt/step-ca/secrets,     owner: "1000", mode: "0700" }
 
 - name: Write CA password file
   ansible.builtin.copy:
@@ -30,7 +30,7 @@
     dns_servers:
       - "{{ lan_dns }}"
     volumes:
-      - /data/docker/step-ca:/home/step
+      - /srv/docker_data/step-ca:/home/step
       - /opt/step-ca/secrets/password:/run/secrets/password:ro
     env:
       DOCKER_STEPCA_INIT_NAME: "{{ step_ca_name }}"

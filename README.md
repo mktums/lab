@@ -142,7 +142,7 @@ ansible-playbook playbooks/servers.yml   # servers only
 
 ### 5. Install root CA on your devices
 
-Copy the root certificate from lab1: `scp lab1:/data/docker/step-ca/certs/root_ca.crt .`
+Copy the root certificate from lab1: `scp lab1:/srv/docker_data/step-ca/certs/root_ca.crt .`
 
 | Device | How to install |
 |--------|----------------|

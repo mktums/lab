@@ -7,7 +7,7 @@
     group: "1000"
     mode: "0755"
   loop:
-    - /data/docker/qbittorrent
+    - /srv/docker_data/qbittorrent
     - /data/downloads
 
 - name: Deploy qBittorrent container
@@ -27,7 +27,7 @@
       WEBUI_PORT: "8080"
       TORRENTING_PORT: "6881"
     volumes:
-      - /data/docker/qbittorrent:/config
+      - /srv/docker_data/qbittorrent:/config
       - /data/downloads:/downloads
     labels:
       traefik.enable: "true"

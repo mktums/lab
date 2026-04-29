@@ -12,7 +12,7 @@
   ansible.builtin.set_fact:
     beszel_agent_volumes: >-
       {{ 
-        ['/data/docker/beszel-agent:/var/lib/beszel-agent', '/var/run/docker.sock:/var/run/docker.sock:ro'] 
+        ['/srv/docker_data/beszel-agent:/var/lib/beszel-agent', '/var/run/docker.sock:/var/run/docker.sock:ro'] 
         + (beszel_extra_volumes | default([]) | list) 
       }}
 

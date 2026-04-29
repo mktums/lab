@@ -1,7 +1,7 @@
 ---
 - name: Create Vaultwarden data directory
   ansible.builtin.file:
-    path: /data/docker/vaultwarden
+    path: /srv/docker_data/vaultwarden
     state: directory
     owner: root
     group: root
@@ -16,7 +16,7 @@
     dns_servers:
       - "{{ lan_dns }}"
     volumes:
-      - /data/docker/vaultwarden:/data
+      - /srv/docker_data/vaultwarden:/data
     env:
       DOMAIN: "https://vw.{{ lan_domain }}"
       ADMIN_TOKEN: "{{ vaultwarden_admin_token }}"

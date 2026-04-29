@@ -10,6 +10,7 @@
 
 | **Hostname** | **lab1** | **lab2** | **personal** |
 |---|---|---|---|
+| **Codename** | Furnace | Eternal | Starship |
 | **CPU** | Core i7 7820X | Pentium G4400 | Core i9 13900KF |
 | **RAM** | 2x 16Gb DDR4 2133 | 1x 8Gb DDR4 2133 | 2x 32Gb DDR5 6000 |
 | **MB** | ASRock X299 Taichi XE | ASUS B150M-A | MSI MPG Z790 CARBON WIFI |

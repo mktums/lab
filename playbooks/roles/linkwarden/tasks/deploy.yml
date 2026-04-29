@@ -1,7 +1,7 @@
 ---
 - name: Create Linkwarden data directory
   ansible.builtin.file:
-    path: /data/docker/linkwarden
+    path: /srv/docker_data/linkwarden
     state: directory
     mode: "0755"
 
@@ -20,7 +20,7 @@
       MEILI_HOST=http://meilisearch:7700
       MEILI_MASTER_KEY={{ linkwarden_meili_master_key }}
       STORAGE_FOLDER=/data
-    dest: /data/docker/linkwarden/.env
+    dest: /srv/docker_data/linkwarden/.env
     mode: "0600"
     backup: true
 
@@ -33,7 +33,7 @@
     networks:
       - name: linkwarden
     volumes:
-      - /data/docker/linkwarden/meilisearch:/meili_data
+      - /srv/docker_data/linkwarden/meilisearch:/meili_data
     env:
       MEILI_MASTER_KEY: "{{ linkwarden_meili_master_key }}"
       MEILI_NO_ANALYTICS: "true"
@@ -48,9 +48,9 @@
     networks:
       - name: linkwarden
     volumes:
-      - /data/docker/linkwarden/data:/data/data
+      - /srv/docker_data/linkwarden/data:/data/data
     env_file:
-      - /data/docker/linkwarden/.env
+      - /srv/docker_data/linkwarden/.env
     labels:
       traefik.enable: "true"
       traefik.http.routers.linkwarden.rule: "Host(`links.{{ lan_domain }}`)"
