@@ -8,7 +8,7 @@
     mode: "0755"
   loop:
     - /srv/docker_data/qbittorrent
-    - /data/downloads
+    - /mnt/reds/downloads
 
 - name: Deploy qBittorrent container
   community.docker.docker_container:
@@ -28,7 +28,7 @@
       TORRENTING_PORT: "6881"
     volumes:
       - /srv/docker_data/qbittorrent:/config
-      - /data/downloads:/downloads
+      - /mnt/reds/downloads:/downloads
     labels:
       traefik.enable: "true"
       traefik.http.routers.qbittorrent.rule: "Host(`qbit{{ lab_index }}.{{ lan_domain }}`)"

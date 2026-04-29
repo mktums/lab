@@ -169,7 +169,7 @@ Do this once per device. After this, all `*.lan` HTTPS services will show a gree
 >   - SYS_RAWIO
 >   - SYS_ADMIN
 > beszel_extra_volumes:
->   - /data/.beszel:/extra-filesystems/sda1:ro
+>   - /<volume_path>/.beszel:/extra-filesystems/sda1:ro
 > ```
 >
 > **Note**: `beszel.yml` deploys the hub container on lab1 and agent containers on both lab1 and lab2. The hub token and hub key are configured separately from the agent credentials.
