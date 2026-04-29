@@ -44,3 +44,12 @@
   when:
     - item in ansible_mounts | map(attribute='mount') | list
     - "'noatime' not in (ansible_mounts | selectattr('mount', 'equalto', item) | first).options"
+
+- name: Storage | Set reserved blocks for data mounts (ext4 only)
+  ansible.builtin.command:
+    cmd: "tune2fs -m 0 {{ item.device }}"
+  loop: "{{ ansible_mounts }}"
+  when:
+    - item.mount in (system_optimize_mounts | default(['/']))
+    - item.mount != '/'
+    - item.fstype in ['ext2', 'ext3', 'ext4']
