@@ -17,6 +17,13 @@
 | **GPU** | Palit GeForce RTX 2080 SUPER JETSTREAM 8GB *(no fans)*| --- | MSI GeForce RTX 4090 SUPRIM X 24G |
 | **Storage** | Samsung 960 PRO 512GB<br>WD Green 1TB<br>3x WD Red 3TB *(almost dead)* | Samsung SSD 850 EVO 250GB<br>WD Blue 2TB | WD Black SN850 1Tb |
 | **PSU** | Corsair HX750i | 3Cott 500ATX | MSI MPG A1000G |
+| **Chassis** | Thermaltake Core V71 Tempered Glass Edition | Montech AIR 1000 Lite | Lian Li Lancool 216 |
+
+### Pre-generated reports
+- [lab1](hw_reports/lab1.md) — **Furnace**
+- [lab2](hw_reports/lab2.md) — **Eternal**
+- ~~[personal](hw_reports/personal.md) — **Starship**~~
+
 
 ## External Storages
 

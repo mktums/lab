@@ -23,12 +23,12 @@
         src: "{{ script_src }}"
         dest: /tmp/hw_report.sh
         mode: '0755'
-      when: ansible_facts['ansible_system'] == "Linux"
+      when: ansible_facts["system"] == "Linux"
 
     - name: Run report on Linux
       command: /tmp/hw_report.sh
       register: linux_report
-      when: ansible_facts['ansible_system'] == "Linux"
+      when: ansible_facts["system"] == "Linux"
       changed_when: false
 
     - name: Save Linux reports to local files
@@ -37,10 +37,10 @@
       copy:
         content: "{{ linux_report.stdout }}"
         dest: "{{ local_reports_dir }}/{{ inventory_hostname }}.md"
-      when: ansible_facts['ansible_system'] == "Linux"
+      when: ansible_facts["system"] == "Linux"
 
     - name: Cleanup | Remove temporary report script
       ansible.builtin.file:
         path: /tmp/hw_report.sh
         state: absent
-      when: ansible_system == "Linux"
+      when: ansible_facts["system"] == "Linux"

@@ -60,6 +60,7 @@
       --certificatesresolvers.step-ca.acme.email={{ traefik_acme_email }}
       --certificatesresolvers.step-ca.acme.storage=/acme/acme.json
       --certificatesresolvers.step-ca.acme.caserver=https://step-ca.{{ lan_domain }}:{{ step_ca_port }}/acme/acme/directory
+      --certificatesresolvers.step-ca.acme.tlschallenge=true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /opt/traefik/traefik-dynamic.yml:/traefik-dynamic.yml:ro
@@ -67,5 +68,3 @@
       - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
     labels:
       traefik.enable: "false"
-
-

@@ -49,6 +49,7 @@ common_packages:
   - tmux
   - dmidecode
   - pciutils
+  - lshw
 
 docker_users:
   - "{{ admin_user }}"

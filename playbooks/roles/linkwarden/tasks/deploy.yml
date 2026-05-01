@@ -49,8 +49,7 @@
       - name: linkwarden
     volumes:
       - /srv/docker_data/linkwarden/data:/data/data
-    env_file:
-      - /srv/docker_data/linkwarden/.env
+    env_file: /srv/docker_data/linkwarden/.env
     labels:
       traefik.enable: "true"
       traefik.http.routers.linkwarden.rule: "Host(`links.{{ lan_domain }}`)"

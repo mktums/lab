@@ -20,7 +20,7 @@
   ansible.builtin.copy:
     content: |
       # Managed by Ansible
-      GRUB_CMDLINE_LINUX_DEFAULT="$GRUB_CMDLINE_LINUX_DEFAULT zswap.enabled=1 zswap.compressor=zstd zswap.max_pool_percent=25"
+      GRUB_CMDLINE_LINUX_DEFAULT="$GRUB_CMDLINE_LINUX_DEFAULT zswap.enabled=1 zswap.compressor=zstd zswap.max_pool_percent=25 zswap.zpool=zsmalloc"
     dest: /etc/default/grub.d/99-zswap.cfg
     mode: '0644'
   register: zswap_grub_cfg
@@ -35,20 +35,20 @@
 - name: System | Optimize mount options
   ansible.builtin.mount:
     path: "{{ item }}"
-    src: "{{ (ansible_mounts | selectattr('mount', 'equalto', item) | first).device | default('') }}"
-    fstype: "{{ (ansible_mounts | selectattr('mount', 'equalto', item) | first).fstype | default('auto') }}"
-    opts: "{{ (ansible_mounts | selectattr('mount', 'equalto', item) | first).options }},noatime"
+    src: "{{ (ansible_facts['mounts'] | selectattr('mount', 'equalto', item) | first).device | default('') }}"
+    fstype: "{{ (ansible_facts['mounts'] | selectattr('mount', 'equalto', item) | first).fstype | default('auto') }}"
+    opts: "{{ (ansible_facts['mounts'] | selectattr('mount', 'equalto', item) | first).options }},noatime"
     state: mounted
     fstab: /etc/fstab
   loop: "{{ system_optimize_mounts | default(['/']) }}"
   when:
-    - item in ansible_mounts | map(attribute='mount') | list
-    - "'noatime' not in (ansible_mounts | selectattr('mount', 'equalto', item) | first).options"
+    - item in ansible_facts['mounts'] | map(attribute='mount') | list
+    - "'noatime' not in (ansible_facts['mounts'] | selectattr('mount', 'equalto', item) | first).options"
 
 - name: Storage | Set reserved blocks for data mounts (ext4 only)
   ansible.builtin.command:
     cmd: "tune2fs -m 0 {{ item.device }}"
-  loop: "{{ ansible_mounts }}"
+  loop: "{{ ansible_facts['mounts'] }}"
   when:
     - item.mount in (system_optimize_mounts | default(['/']))
     - item.mount != '/'
