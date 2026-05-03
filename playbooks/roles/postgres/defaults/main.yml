@@ -1,0 +1,17 @@
+# Postgres defaults
+
+# Image
+postgres_image_name: "postgres"
+postgres_image_tag: "17-alpine"
+
+# Paths
+postgres_data_dir: "{{ docker_data_base }}/db/postgres"
+
+# Network
+postgres_port: 5432
+
+# Container settings
+postgres_shm_size: "256m"
+
+# CNAME subdomain (without .{{ lan_domain }})
+postgres_cname: "db"

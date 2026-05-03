@@ -1,0 +1,11 @@
+# Vaultwarden defaults
+
+# Image
+vaultwarden_image_name: "vaultwarden/server"
+vaultwarden_image_tag: "latest"
+
+# Paths
+vaultwarden_data_dir: "{{ docker_data_base }}/vaultwarden"
+
+# CNAME subdomain (without .{{ lan_domain }})
+vaultwarden_cname: "vw"

@@ -1,7 +1,7 @@
 http:
   routers:
     traefik-dashboard:
-      rule: "Host(`traefik.{{ inventory_hostname }}.{{ lan_domain }}`)"
+      rule: "Host(`{{ traefik_cname }}.{{ inventory_hostname }}.{{ lan_domain }}`)"
       entrypoints:
         - websecure
       tls:

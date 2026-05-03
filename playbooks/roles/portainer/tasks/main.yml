@@ -6,5 +6,5 @@
     name: common
     tasks_from: register_cname
   vars:
-    cname_name: "{{ portainer_cname_name | default('portainer.' + lan_domain) }}"
+    cname_name: "{{ portainer_cname }}.{{ lan_domain }}"
     cname_target: "{{ portainer_cname_target | default(inventory_hostname + '.' + lan_domain) }}"

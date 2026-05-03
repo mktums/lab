@@ -4,6 +4,7 @@ admin_ssh_pubkey: "{{ vault_admin_ssh_pubkey }}"
 ansible_user: "{{ admin_user }}"
 ansible_become_password: "{{ vault_become_password }}"
 
+
 # geerlingguy.security
 security_ssh_port: 22
 security_ssh_permit_root_login: "no"
@@ -51,19 +52,20 @@ common_packages:
   - pciutils
   - lshw
 
+# Base directory for all Docker service bind mounts
+docker_data_base: "/srv/docker_data"
+
+# Shared downloads directory (override per-host if needed)
+downloads_dir: "/data/downloads"
+
 docker_users:
   - "{{ admin_user }}"
 
-unattended_upgrades_enabled: true
-
-# Traefik
 traefik_acme_email: "admin@{{ lan_domain }}"
 traefik_dashboard_user: "{{ vault_admin_user }}"
 traefik_dashboard_password: "{{ vault_traefik_dashboard_password }}"
 
 # step-ca
-step_ca_port: 8443
-step_ca_name: "Homelab CA"
 step_ca_password: "{{ vault_step_ca_password }}"
 
 # Portainer

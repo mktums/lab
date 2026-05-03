@@ -1,0 +1,15 @@
+# qBittorrent defaults
+
+# Image
+qbittorrent_image_name: "lscr.io/linuxserver/qbittorrent"
+qbittorrent_image_tag: "libtorrentv1"
+
+# Paths
+qbittorrent_data_dir: "{{ docker_data_base }}/qbittorrent"
+
+# Network
+qbittorrent_web_port: 8080
+qbittorrent_torrent_port: 6881
+
+# CNAME subdomain (without .{{ inventory_hostname }}.{{ lan_domain }})
+qbittorrent_cname: "qbit"

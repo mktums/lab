@@ -17,10 +17,12 @@ Each file describes a single change or refactoring effort: the motivation, affec
 | # | Priority | Plan | Difficulty | Status |
 |---|----------|------|------------|--------|
 | 0 | Critical | Revival of LANs communities (Altair/OrNet/ZNet style) | Impossible | Dreaming |
-| 1 | Normal | [Move structural vars from inventory to role defaults](001-move-to-defaults.md) | Medium | In review |
+| 1 | Normal | [Move structural vars from inventory to role defaults](001-move-to-defaults.md) | Medium | ✅ Done (2026-05-03) |
 | 2 | Low | [Harden router SSH configuration](002-harden-router.md) | Hard | In review |
-| 3 | Low | [Rework Beszel playbooks](003-rework-beszel.md) | Medium | In review |
+| 3 | Low | [Rework Beszel playbooks](003-rework-beszel.md) | Medium | ✅ Done (2026-05-03) |
 | 4 | Normal | [Remove `lab_index` — use inventory_hostname directly](004-remove-lab-index.md) | Easy | ✅ Done (2026-05-03) |
 | 5 | Critical | [Kopia backup server + agents (labs, PC, MacBook, Android)](005-kopia-backup.md) | Hard | In review |
 | 6 | Low | [Service docs generator approach TBD](006-docs-generator-approach.md) | — | In review |
 | 7 | High | [Migrate from docker_container to Docker Compose](007-migrate-to-docker-compose.md) | Hard | In review |
+| 8 | Low | [Optimize inpx-web Dockerfile (multi-stage build)](008-optimize-inpx-dockerfile.md) | Medium | In review |
+| 9 | Normal | [Reconsider service playbook independence](009-service-playbook-independence.md) | Easy | In review |

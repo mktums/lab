@@ -1,21 +1,21 @@
 ---
 - name: Create Postgres data directory
   ansible.builtin.file:
-    path: /srv/docker_data/db/postgres
+    path: "{{ postgres_data_dir }}"
     state: directory
     mode: "0700"
 
 - name: Deploy Postgres container
   community.docker.docker_container:
     name: postgres
-    image: postgres:17-alpine
+    image: "{{ postgres_image_name }}:{{ postgres_image_tag }}"
     pull: missing
     restart_policy: unless-stopped
     published_ports:
-      - "5432:5432"
+      - "{{ postgres_port }}:5432"
     volumes:
-      - /srv/docker_data/db/postgres:/var/lib/postgresql/data
+      - "{{ postgres_data_dir }}:/var/lib/postgresql/data"
     env:
       POSTGRES_PASSWORD: "{{ postgres_password }}"
-    shm_size: "256m"
+    shm_size: "{{ postgres_shm_size }}"
   notify: Restart postgres

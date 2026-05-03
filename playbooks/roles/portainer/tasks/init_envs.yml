@@ -4,7 +4,7 @@
 
 - name: Wait for Portainer API to be ready
   ansible.builtin.uri:
-    url: "https://portainer.{{ lan_domain }}/api/status"
+    url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/status"
     validate_certs: false
     status_code: 200
   register: _portainer_ready
@@ -16,7 +16,7 @@
 
 - name: Authenticate with Portainer API
   ansible.builtin.uri:
-    url: "https://portainer.{{ lan_domain }}/api/auth"
+    url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/auth"
     method: POST
     body_format: json
     body:
@@ -31,7 +31,7 @@
 
 - name: Get existing environments
   ansible.builtin.uri:
-    url: "https://portainer.{{ lan_domain }}/api/endpoints"
+    url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/endpoints"
     headers:
       Authorization: "Bearer {{ _portainer_auth.json.jwt }}"
     validate_certs: false
@@ -42,7 +42,7 @@
 
 - name: Register local Docker environment if not present
   ansible.builtin.uri:
-    url: "https://portainer.{{ lan_domain }}/api/endpoints"
+    url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/endpoints"
     method: POST
     headers:
       Authorization: "Bearer {{ _portainer_auth.json.jwt }}"
@@ -63,7 +63,7 @@
 
 - name: Get environments again after possible creation
   ansible.builtin.uri:
-    url: "https://portainer.{{ lan_domain }}/api/endpoints"
+    url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/endpoints"
     headers:
       Authorization: "Bearer {{ _portainer_auth.json.jwt }}"
     validate_certs: false

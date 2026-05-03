@@ -1,6 +1,6 @@
 # Hardware Report: lab1
 
-Generated: 2026-05-01 05:29:12 UTC
+Generated: 2026-05-03 22:28:16 UTC
 
 ## System & CPU
 
@@ -46,7 +46,7 @@ Generated: 2026-05-01 05:29:12 UTC
 | /dev/sdb | HDD | WDC WD30EFRX-68A | 2.73 TB | 316.74 GB (6%) | PASSED | Offline_Uncorrectable 2 |
 | /dev/sdc | HDD | WDC WD30EFRX-68A | 2.73 TB | 316.74 GB (6%) | PASSED | - |
 | /dev/sdd | HDD | WDC WD10EARS-00Y | 931.51 GB | 32 KB (1%) | PASSED | - |
-| /dev/nvme0n1 | NVMe | Samsung SSD 960 PRO 512GB | 476.94 GB | 45.56 GB (11%) | PASSED | Wear: 21% |
+| /dev/nvme0n1 | NVMe | Samsung SSD 960 PRO 512GB | 476.94 GB | 45.34 GB (11%) | PASSED | Wear: 21% |
 
 ### RAID Arrays
 
@@ -58,6 +58,6 @@ Generated: 2026-05-01 05:29:12 UTC
 
 | Interface | Model | Link Speed | IP Address | Status |
 |:---|:---|:---|:---|:---|
-| eno1 | ASRock Incorporation Ethernet Connection (2) I219-V | 1000Mb/s | 10.10.10.10/24 | UP |
-| enp5s0 | ASRock Incorporation I211 Gigabit Network Connection | - | - | DOWN |
+| eno1 | ASRock Incorporation Ethernet Connection (2) I219-V | - | fe80::7285:c2ff:fe63:5859/64 | DOWN |
+| enp5s0 | ASRock Incorporation I211 Gigabit Network Connection | 1000Mb/s | 10.10.10.10/24 | UP |
 | wlp4s0 | Intel Corporation Dual Band Wireless-AC 3168NGW [Stone Peak] | - | - | DOWN |

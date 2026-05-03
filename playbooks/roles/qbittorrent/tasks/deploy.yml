@@ -3,44 +3,44 @@
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-    owner: "1000"
-    group: "1000"
+    owner: "{{ container_puid }}"
+    group: "{{ container_pgid }}"
     mode: "0755"
   loop:
-    - /srv/docker_data/qbittorrent
-    - /mnt/reds/downloads
+    - "{{ qbittorrent_data_dir }}"
+    - "{{ downloads_dir }}"
 
 - name: Deploy qBittorrent container
   community.docker.docker_container:
     name: qbittorrent
-    image: lscr.io/linuxserver/qbittorrent:libtorrentv1
+    image: "{{ qbittorrent_image_name }}:{{ qbittorrent_image_tag }}"
     pull: missing
     restart_policy: unless-stopped
     published_ports:
-      - "127.0.0.1:8080:8080"
-      - "6881:6881"
-      - "6881:6881/udp"
+      - "127.0.0.1:{{ qbittorrent_web_port }}:8080"
+      - "{{ qbittorrent_torrent_port }}:6881"
+      - "{{ qbittorrent_torrent_port }}:6881/udp"
     env:
-      PUID: "1000"
-      PGID: "1000"
+      PUID: "{{ container_puid | string }}"
+      PGID: "{{ container_pgid | string }}"
       TZ: "{{ timezone }}"
-      WEBUI_PORT: "8080"
-      TORRENTING_PORT: "6881"
+      WEBUI_PORT: "{{ qbittorrent_web_port | string }}"
+      TORRENTING_PORT: "{{ qbittorrent_torrent_port | string }}"
     volumes:
-      - /srv/docker_data/qbittorrent:/config
-      - /mnt/reds/downloads:/downloads
+      - "{{ qbittorrent_data_dir }}:/config"
+      - "{{ downloads_dir }}:/downloads"
     labels:
       traefik.enable: "true"
-      traefik.http.routers.qbittorrent.rule: "Host(`qbit.{{ inventory_hostname }}.{{ lan_domain }}`)"
+      traefik.http.routers.qbittorrent.rule: "Host(`{{ qbittorrent_cname }}.{{ inventory_hostname }}.{{ lan_domain }}`)"
       traefik.http.routers.qbittorrent.entrypoints: "websecure"
       traefik.http.routers.qbittorrent.tls: "true"
       traefik.http.routers.qbittorrent.tls.certresolver: "step-ca"
-      traefik.http.services.qbittorrent.loadbalancer.server.port: "8080"
+      traefik.http.services.qbittorrent.loadbalancer.server.port: "{{ qbittorrent_web_port }}"
   notify: Restart qBittorrent
 
 - name: Wait for qBittorrent WebUI to be ready
   ansible.builtin.uri:
-    url: "http://localhost:8080"
+    url: "http://localhost:{{ qbittorrent_web_port }}"
     status_code: 200
   register: _qbit_ready
   until: _qbit_ready.status == 200
@@ -49,12 +49,12 @@
 
 - name: Check if desired password already works
   ansible.builtin.uri:
-    url: "http://localhost:8080/api/v2/auth/login"
+    url: "http://localhost:{{ qbittorrent_web_port }}/api/v2/auth/login"
     method: POST
     body: "username=admin&password={{ qbittorrent_password }}"
     headers:
       Content-Type: "application/x-www-form-urlencoded"
-      Referer: "http://localhost:8080"
+      Referer: "http://localhost:{{ qbittorrent_web_port }}"
     status_code: 200
     return_content: true
   register: _qbit_login_check
@@ -74,12 +74,12 @@
 
 - name: Login with temporary password
   ansible.builtin.uri:
-    url: "http://localhost:8080/api/v2/auth/login"
+    url: "http://localhost:{{ qbittorrent_web_port }}/api/v2/auth/login"
     method: POST
     body: "username=admin&password={{ _qbit_temp_pass }}"
     headers:
       Content-Type: "application/x-www-form-urlencoded"
-      Referer: "http://localhost:8080"
+      Referer: "http://localhost:{{ qbittorrent_web_port }}"
     status_code: 200
   register: _qbit_login_temp
   no_log: true
@@ -87,12 +87,12 @@
 
 - name: Change password via API
   ansible.builtin.uri:
-    url: "http://localhost:8080/api/v2/app/setPreferences"
+    url: "http://localhost:{{ qbittorrent_web_port }}/api/v2/app/setPreferences"
     method: POST
     body: "json={{ {'web_ui_password': qbittorrent_password} | to_json | urlencode }}"
     headers:
       Content-Type: "application/x-www-form-urlencoded"
-      Referer: "http://localhost:8080"
+      Referer: "http://localhost:{{ qbittorrent_web_port }}"
       Cookie: "{{ _qbit_login_temp.cookies_string }}"
     status_code: 200
   no_log: true

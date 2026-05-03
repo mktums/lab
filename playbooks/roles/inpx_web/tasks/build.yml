@@ -1,0 +1,62 @@
+---
+- name: Create directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ inpx_web_config_dir }}"
+    - "{{ inpx_web_data_dir }}"
+
+- name: Copy build context to host
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ inpx_web_config_dir }}/{{ item }}"
+    mode: "0644"
+  loop:
+    - Dockerfile
+    - supervisord.conf
+    - entrypoint.sh
+
+- name: Fix entrypoint permissions
+  ansible.builtin.file:
+    path: "{{ inpx_web_config_dir }}/entrypoint.sh"
+    mode: "0755"
+
+- name: Checksum build context
+  ansible.builtin.stat:
+    path: "{{ inpx_web_config_dir }}/{{ item }}"
+    checksum_algorithm: sha256
+  loop:
+    - Dockerfile
+    - supervisord.conf
+    - entrypoint.sh
+  register: _build_context_stats
+
+- name: Set build context hash
+  ansible.builtin.set_fact:
+    _build_hash: "{{ _build_context_stats.results | map(attribute='stat.checksum') | join('') | hash('sha256') }}"
+
+- name: Read previous build hash
+  ansible.builtin.slurp:
+    src: "{{ inpx_web_config_dir }}/.build_hash"
+  register: _prev_hash
+  failed_when: false
+
+- name: Build image
+  community.docker.docker_image:
+    name: "{{ inpx_web_image_name }}"
+    tag: "{{ inpx_web_image_tag }}"
+    build:
+      path: "{{ inpx_web_config_dir }}"
+      pull: true
+    source: build
+    force_source: true
+  when: _build_hash != (_prev_hash.content | default('') | b64decode | trim)
+  notify: Restart inpx-web
+
+- name: Save build hash
+  ansible.builtin.copy:
+    content: "{{ _build_hash }}"
+    dest: "{{ inpx_web_config_dir }}/.build_hash"
+    mode: "0644"

@@ -1,0 +1,12 @@
+# Portainer defaults
+
+# Image
+portainer_image_name: "portainer/portainer-ce"
+portainer_image_tag: "latest"
+
+# Network
+portainer_web_port: 9000
+portainer_edge_port: 8000
+
+# CNAME subdomain (without .{{ lan_domain }})
+portainer_cname: "portainer"

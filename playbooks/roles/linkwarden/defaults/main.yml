@@ -1,0 +1,16 @@
+# Linkwarden defaults
+
+# Images
+linkwarden_image_name: "ghcr.io/linkwarden/linkwarden"
+linkwarden_image_tag: "latest"
+linkwarden_meili_image_name: "getmeili/meilisearch"
+linkwarden_meili_image_tag: "latest"
+
+# Paths
+linkwarden_data_dir: "{{ docker_data_base }}/linkwarden"
+
+# Dependencies (fallback here)
+postgres_port: 5432
+
+# CNAME subdomain (without .{{ lan_domain }})
+linkwarden_cname: "links"

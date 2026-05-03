@@ -6,7 +6,7 @@
 
 - name: Authenticate as Beszel user
   ansible.builtin.uri:
-    url: "http://localhost:8090/api/collections/users/auth-with-password"
+    url: "http://localhost:{{ beszel_port }}/api/collections/users/auth-with-password"
     method: POST
     body_format: json
     body:
@@ -18,7 +18,7 @@
 
 - name: Get existing systems
   ansible.builtin.uri:
-    url: "http://localhost:8090/api/collections/systems/records?perPage=100"
+    url: "http://localhost:{{ beszel_port }}/api/collections/systems/records?perPage=100"
     headers:
       Authorization: "{{ _beszel_user_auth.json.token }}"
     status_code: 200
@@ -30,7 +30,7 @@
 
 - name: Register remote systems
   ansible.builtin.uri:
-    url: "http://localhost:8090/api/collections/systems/records"
+    url: "http://localhost:{{ beszel_port }}/api/collections/systems/records"
     method: POST
     headers:
       Authorization: "{{ _beszel_user_auth.json.token }}"

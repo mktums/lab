@@ -7,34 +7,32 @@
     group: "{{ item.owner }}"
     mode: "{{ item.mode }}"
   loop:
-    - { path: /srv/docker_data/step-ca, owner: "1000", mode: "0700" }
-    - { path: /opt/step-ca,             owner: "root", mode: "0700" }
-    - { path: /opt/step-ca/secrets,     owner: "1000", mode: "0700" }
+    - { path: "{{ step_ca_data_dir }}", owner: "{{ container_puid }}", mode: "0700" }
+    - { path: "{{ step_ca_config_dir }}", owner: "root", mode: "0700" }
+    - { path: "{{ step_ca_config_dir }}/secrets", owner: "{{ container_puid }}", mode: "0700" }
 
 - name: Write CA password file
   ansible.builtin.copy:
     content: "{{ step_ca_password }}"
-    dest: /opt/step-ca/secrets/password
-    owner: "1000"
-    group: "1000"
+    dest: "{{ step_ca_config_dir }}/secrets/password"
+    owner: "{{ container_puid }}"
+    group: "{{ container_pgid }}"
     mode: "0400"
 
 - name: Deploy step-ca container
   community.docker.docker_container:
     name: step-ca
-    image: smallstep/step-ca:latest
+    image: "{{ step_ca_image_name }}:{{ step_ca_image_tag }}"
     pull: missing
     restart_policy: unless-stopped
     published_ports:
       - "{{ step_ca_port }}:9000"
-    dns_servers:
-      - "{{ lan_dns }}"
     volumes:
-      - /srv/docker_data/step-ca:/home/step
-      - /opt/step-ca/secrets/password:/run/secrets/password:ro
+      - "{{ step_ca_data_dir }}:/home/step"
+      - "{{ step_ca_config_dir }}/secrets/password:/run/secrets/password:ro"
     env:
       DOCKER_STEPCA_INIT_NAME: "{{ step_ca_name }}"
-      DOCKER_STEPCA_INIT_DNS_NAMES: "localhost,step-ca.{{ lan_domain }},{{ inventory_hostname }}.{{ lan_domain }}"
+      DOCKER_STEPCA_INIT_DNS_NAMES: "localhost,{{ step_ca_cname }}.{{ lan_domain }},{{ inventory_hostname }}.{{ lan_domain }}"
       DOCKER_STEPCA_INIT_ACME: "true"
       DOCKER_STEPCA_INIT_PASSWORD_FILE: /run/secrets/password
   notify: Restart step-ca

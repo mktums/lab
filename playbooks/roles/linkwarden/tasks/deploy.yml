@@ -1,7 +1,7 @@
 ---
 - name: Create Linkwarden data directory
   ansible.builtin.file:
-    path: /srv/docker_data/linkwarden
+    path: "{{ linkwarden_data_dir }}"
     state: directory
     mode: "0755"
 
@@ -14,26 +14,26 @@
   ansible.builtin.copy:
     content: |
       NEXTAUTH_SECRET={{ linkwarden_nextauth_secret }}
-      NEXTAUTH_URL=https://links.{{ lan_domain }}/api/v1/auth
-      BASE_URL=https://links.{{ lan_domain }}
-      DATABASE_URL=postgresql://linkwarden:{{ linkwarden_db_password }}@db.{{ lan_domain }}:5432/linkwarden
+      NEXTAUTH_URL=https://{{ linkwarden_cname }}.{{ lan_domain }}/api/v1/auth
+      BASE_URL=https://{{ linkwarden_cname }}.{{ lan_domain }}
+      DATABASE_URL=postgresql://linkwarden:{{ linkwarden_db_password }}@db.{{ lan_domain }}:{{ postgres_port }}/linkwarden
       MEILI_HOST=http://meilisearch:7700
       MEILI_MASTER_KEY={{ linkwarden_meili_master_key }}
       STORAGE_FOLDER=/data
-    dest: /srv/docker_data/linkwarden/.env
+    dest: "{{ linkwarden_data_dir }}/.env"
     mode: "0600"
     backup: true
 
 - name: Deploy Meilisearch container
   community.docker.docker_container:
     name: meilisearch
-    image: getmeili/meilisearch:latest
+    image: "{{ linkwarden_meili_image_name }}:{{ linkwarden_meili_image_tag }}"
     pull: missing
     restart_policy: unless-stopped
     networks:
       - name: linkwarden
     volumes:
-      - /srv/docker_data/linkwarden/meilisearch:/meili_data
+      - "{{ linkwarden_data_dir }}/meilisearch:/meili_data"
     env:
       MEILI_MASTER_KEY: "{{ linkwarden_meili_master_key }}"
       MEILI_NO_ANALYTICS: "true"
@@ -42,17 +42,17 @@
 - name: Deploy Linkwarden container
   community.docker.docker_container:
     name: linkwarden
-    image: ghcr.io/linkwarden/linkwarden:latest
+    image: "{{ linkwarden_image_name }}:{{ linkwarden_image_tag }}"
     pull: missing
     restart_policy: unless-stopped
     networks:
       - name: linkwarden
     volumes:
-      - /srv/docker_data/linkwarden/data:/data/data
-    env_file: /srv/docker_data/linkwarden/.env
+      - "{{ linkwarden_data_dir }}/data:/data/data"
+    env_file: "{{ linkwarden_data_dir }}/.env"
     labels:
       traefik.enable: "true"
-      traefik.http.routers.linkwarden.rule: "Host(`links.{{ lan_domain }}`)"
+      traefik.http.routers.linkwarden.rule: "Host(`{{ linkwarden_cname }}.{{ lan_domain }}`)"
       traefik.http.routers.linkwarden.entrypoints: "websecure"
       traefik.http.routers.linkwarden.tls: "true"
       traefik.http.routers.linkwarden.tls.certresolver: "step-ca"

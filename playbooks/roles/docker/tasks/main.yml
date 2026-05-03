@@ -57,6 +57,31 @@
     append: true
   loop: "{{ docker_users | default([]) }}"
 
+- name: Ensure Docker config directory exists
+  ansible.builtin.file:
+    path: /etc/docker
+    state: directory
+    mode: "0755"
+
+- name: Check if daemon.json exists
+  ansible.builtin.stat:
+    path: /etc/docker/daemon.json
+  register: _daemon_json_stat
+
+- name: Read existing daemon.json
+  ansible.builtin.slurp:
+    src: /etc/docker/daemon.json
+  register: _daemon_json
+  when: _daemon_json_stat.stat.exists
+
+- name: Configure Docker DNS resolver
+  ansible.builtin.copy:
+    content: "{{ (_daemon_json.content | b64decode | from_json if _daemon_json_stat.stat.exists else {}) | combine({'dns': [lan_dns]}) | to_nice_json }}"
+    dest: /etc/docker/daemon.json
+    mode: "0644"
+    backup: true
+  notify: Restart Docker
+
 - name: Install nvidia-container-toolkit
   when: nvidia_gpu | default(false)
   block:

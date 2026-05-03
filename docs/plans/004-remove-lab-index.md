@@ -1,5 +1,3 @@
-> **✅ Done** (2026-05-03) — Implemented. DNS migrated from `qbit1.lan`/`qbit2.lan` → `qbit.lab1.lan`/`qbit.lab2.lan`.
-
 # 004: Remove `lab_index` — use inventory_hostname directly
 
 ## Motivation
@@ -55,6 +53,24 @@ lab2:
 ### Step 4: Verify no other references
 
 Run `grep -rn 'lab_index' . --include='*.yml'` to confirm zero remaining references.
+
+## Status: ✅ DONE (2026-05-03)
+
+Implemented as part of plan #001 role refactoring. DNS migrated from `qbit1.lan`/`qbit2.lan` → `qbit.lab1.lan`/`qbit.lab2.lan`.
+
+### Extra changes beyond plan
+
+| Change | Detail |
+|---|---|
+| `.lan` domain decoupled globally | All hosts use `hostname.{{ lan_domain }}`, no hardcoded domains in inventory |
+| Redundant `ansible_host` removed | Group vars no longer override what's already in hostname |
+| OpenWrt timezone restored | Lost during earlier refactor, added back to `group_vars/routers.yml` |
+
+### Lessons learned
+
+- `inventory_hostname` is always available — no need for manual index variables
+- Hardcoded domains in inventory create drift risk when infrastructure changes
+- Domain centralization (`lan_domain` in `all.yml`) makes future multi-domain setups easier
 
 ## Rollback
 

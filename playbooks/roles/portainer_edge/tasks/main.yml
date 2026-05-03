@@ -21,6 +21,6 @@
       EDGE: "1"
       EDGE_ID: "{{ portainer_edge_id | string }}"
       EDGE_KEY: "{{ portainer_edge_key }}"
-      # EDGE_INSECURE_POLL: "1"  # Uncomment if agent fails to trust step-ca cert on lab2 (requires step-ca CA in agent container trust store)
+      # EDGE_INSECURE_POLL: "1"  # Uncomment if agent fails to trust step-ca cert (requires step-ca CA in agent container trust store)
       AGENT_CLUSTER_ADDR: ""
   when: portainer_edge_key is defined and portainer_edge_key | length > 0

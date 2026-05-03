@@ -1,0 +1,16 @@
+# inpx-web defaults
+
+# Image
+inpx_web_image_name: "inpx-web"
+inpx_web_image_tag: "latest"
+
+# Paths
+inpx_web_data_dir: "{{ docker_data_base }}/inpx-web"
+inpx_web_config_dir: "/opt/inpx-web"
+
+# Network
+inpx_web_port: 12380
+inpx_web_liberama_port: 44080
+
+# CNAME subdomain (without .{{ lan_domain }})
+inpx_web_cname: "lib"

@@ -1,0 +1,24 @@
+# Beszel defaults
+# Unified role: hub + agent.
+
+# Image
+beszel_image_name: "henrygd/beszel"
+beszel_image_tag: "latest"
+
+# Agent images
+beszel_agent_image_name: "henrygd/beszel-agent"
+beszel_agent_image_tag: "alpine"
+beszel_agent_image_nvidia_name: "henrygd/beszel-agent-nvidia"
+beszel_agent_image_nvidia_tag: "latest"
+
+# Paths
+beszel_data_dir: "{{ docker_data_base }}/beszel"
+
+# Network
+beszel_port: 8090
+
+# CNAME subdomain (without .{{ lan_domain }})
+beszel_cname: "beszel"
+
+# Agent settings
+beszel_disk_cache: "1h"

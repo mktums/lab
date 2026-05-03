@@ -1,5 +1,5 @@
 ---
-# IPv6 — configurable via lan_ipv6_enabled (default: false, same as before)
+# IPv6 — configurable via lan_ipv6_disabled (default: false)
 - name: Disable IPv6 on WAN
   community.openwrt.uci:
     command: set
@@ -8,7 +8,7 @@
   loop:
     - { key: network.wan6.disabled, value: "1" }
     - { key: network.wan.ipv6,      value: "0" }
-  when: not lan_ipv6_enabled | default(false)
+  when: lan_ipv6_disabled | default(false)
 
 - name: Create IoT interface
   community.openwrt.uci:

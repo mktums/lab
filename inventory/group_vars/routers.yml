@@ -1,5 +1,8 @@
 ---
-openwrt_hostname: "openwrt"
+# IPv6 disabled on router
+lan_ipv6_disabled: true
+
+# OpenWrt timezone
 openwrt_timezone: "MSK-3"
 
 # LAN — IP is set manually before Ansible runs (see README)
@@ -60,10 +63,10 @@ wifi_interfaces:
 # DHCP reservations
 dhcp_reservations:
   - name: lab1
-    mac: "70:85:c2:63:58:59"
+    mac: "70:85:C2:63:58:5B"
     ip: "10.10.10.10"
   - name: lab2
-    mac: "2c:56:dc:7b:69:d1"
+    mac: "2C:56:DC:7B:69:D1"
     ip: "10.10.10.11"
 
 # Packages

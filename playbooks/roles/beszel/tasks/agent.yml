@@ -1,24 +1,25 @@
 ---
-- name: Deploy Beszel agent container (local via socket)
+# Build Beszel agent environment - use NVML (officially recommended for power-saving RTD3 support)
+- name: Build Beszel agent environment
+  ansible.builtin.set_fact:
+    beszel_agent_env: "{{ {'LISTEN': '45876', 'HUB_URL': 'http://' + beszel_cname + '.' + lan_domain + ':' + beszel_port | string, 'TOKEN': beszel_token, 'KEY': beszel_hub_key, 'DISK_USAGE_CACHE': beszel_disk_cache} | combine({'GPU_COLLECTOR': 'nvml'} if nvidia_gpu | default(false) == true else {}) }}"
+
+# Deploy Beszel agent container - use NVIDIA Container Toolkit for GPU access
+- name: Deploy Beszel agent container
   community.docker.docker_container:
     name: beszel-agent
-    image: henrygd/beszel-agent:latest
+    image: "{{ beszel_agent_image_nvidia_name if nvidia_gpu | default(false) else beszel_agent_image_name }}:{{ beszel_agent_image_nvidia_tag if nvidia_gpu | default(false) else beszel_agent_image_tag }}"
     pull: missing
     restart_policy: unless-stopped
     network_mode: host
-    device_requests: "{{ [{'count': -1, 'capabilities': [['gpu']]}] if nvidia_gpu | default(false) else omit }}"
-    volumes:
-      - /srv/docker_data/beszel/agent:/var/lib/beszel-agent
-      - /srv/docker_data/beszel/socket:/beszel_socket
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    env: >-
-      {{
-        {
-          'LISTEN': '/beszel_socket/beszel.sock',
-          'TOKEN': beszel_token,
-          'KEY': beszel_hub_key,
-          'DISK_USAGE_CACHE': '1h'
-        }
-        | combine({'NVML': 'true'} if nvidia_gpu | default(false) else {})
-      }}
+    devices: "{{ beszel_smart_devices | default([]) }}"
+    capabilities: "{{ beszel_smart_cap_add | default([]) }}"
+    device_requests: >-
+      {{ [{'count': -1, 'capabilities': [['gpu']]}] if nvidia_gpu | default(false) == true else omit }}
+    volumes: "{{ [docker_data_base + '/beszel-agent:/var/lib/beszel-agent', '/var/run/docker.sock:/var/run/docker.sock:ro'] + (beszel_extra_volumes | default([]) | list) }}"
+    env: "{{ beszel_agent_env }}"
+    labels:
+      io.beszel.agent: "true"
+      io.beszel.hostname: "{{ inventory_hostname }}"
+    recreate: false
   when: beszel_token | default('') | length > 0

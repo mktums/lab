@@ -1,6 +1,6 @@
 # Hardware Report: lab2
 
-Generated: 2026-05-01 05:29:12 UTC
+Generated: 2026-05-03 22:28:16 UTC
 
 ## System & CPU
 
@@ -41,8 +41,8 @@ Generated: 2026-05-01 05:29:12 UTC
 
 | Device | Type | Model | Size | Used | Health | Notes |
 |:---|:---|:---|:---|:---|:---|:---|
-| /dev/sda | HDD | WDC WD20EZRZ-00Z | 1.82 TB | 1.44 TB (85%) | PASSED | - |
-| /dev/sdb | SSD | Samsung SSD 850 | 232.89 GB | 15.78 GB (8%) | PASSED | Wear: 7% |
+| /dev/sda | HDD | WDC WD20EZRZ-00Z | 1.82 TB | 1.45 TB (82%) | PASSED | - |
+| /dev/sdb | SSD | Samsung SSD 850 | 232.89 GB | 16.66 GB (8%) | PASSED | Wear: 7% |
 
 ### RAID Arrays
 

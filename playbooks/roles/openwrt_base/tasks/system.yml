@@ -1,11 +1,4 @@
 ---
-- name: Set hostname
-  community.openwrt.uci:
-    command: set
-    key: system.@system[0].hostname
-    value: "{{ openwrt_hostname }}"
-  notify: Commit and reload system
-
 - name: Set timezone
   community.openwrt.uci:
     command: set

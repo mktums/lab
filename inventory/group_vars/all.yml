@@ -2,3 +2,7 @@
 timezone: "Europe/Moscow"
 lan_domain: "lan"
 lan_dns: "10.10.10.1"
+
+# Default container user (non-root)
+container_puid: 1000
+container_pgid: 1000

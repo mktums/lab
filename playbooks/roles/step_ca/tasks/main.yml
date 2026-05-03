@@ -5,5 +5,5 @@
     name: common
     tasks_from: register_cname
   vars:
-    cname_name: "{{ step_ca_cname_name | default('step-ca.' + lan_domain) }}"
+    cname_name: "{{ step_ca_cname }}.{{ lan_domain }}"
     cname_target: "{{ step_ca_cname_target | default(inventory_hostname + '.' + lan_domain) }}"

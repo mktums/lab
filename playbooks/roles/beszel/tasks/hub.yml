@@ -5,27 +5,27 @@
     state: directory
     mode: "0755"
   loop:
-    - /srv/docker_data/beszel
+    - "{{ beszel_data_dir }}"
 
 - name: Deploy Beszel hub container
   community.docker.docker_container:
     name: beszel
-    image: henrygd/beszel:latest
+    image: "{{ beszel_image_name }}:{{ beszel_image_tag }}"
     pull: missing
     restart_policy: unless-stopped
     published_ports:
-      - "8090:8090"
+      - "{{ beszel_port }}:8090"
     volumes:
-      - /srv/docker_data/beszel/data:/beszel_data
+      - "{{ beszel_data_dir }}/data:/beszel_data"
     env:
-      APP_URL: "https://beszel.{{ lan_domain }}"
+      APP_URL: "https://{{ beszel_cname }}.{{ lan_domain }}"
       USER_EMAIL: "{{ beszel_admin_email }}"
       USER_PASSWORD: "{{ beszel_admin_password }}"
     labels:
       traefik.enable: "true"
-      traefik.http.routers.beszel.rule: "Host(`beszel.{{ lan_domain }}`)"
+      traefik.http.routers.beszel.rule: "Host(`{{ beszel_cname }}.{{ lan_domain }}`)"
       traefik.http.routers.beszel.entrypoints: "websecure"
       traefik.http.routers.beszel.tls: "true"
       traefik.http.routers.beszel.tls.certresolver: "step-ca"
-      traefik.http.services.beszel.loadbalancer.server.port: "8090"
+      traefik.http.services.beszel.loadbalancer.server.port: "{{ beszel_port }}"
   notify: Restart beszel

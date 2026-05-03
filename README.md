@@ -164,7 +164,7 @@ Do this once per device. After this, all `*.lan` HTTPS services will show a gree
 > ```yaml
 > beszel_smart_devices:
 >   - /dev/sda:/dev/sda
->   - /dev/nvme0n1:/dev/nvme0n1
+>   - /dev/nvme0:/dev/nvme0  # controller device, not namespace (nvme0n1)
 > beszel_smart_cap_add:
 >   - SYS_RAWIO
 >   - SYS_ADMIN

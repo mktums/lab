@@ -9,8 +9,8 @@
     group: root
     mode: "0755"
   loop:
-    - /opt/traefik
-    - /opt/traefik/acme
+    - "{{ traefik_config_dir }}"
+    - "{{ traefik_data_dir }}/acme"
 
 - name: Flush handlers to ensure CA trust store is updated before Traefik restarts
   ansible.builtin.meta: flush_handlers
@@ -22,13 +22,13 @@
 - name: Deploy Traefik dynamic config only (for routers/middlewares)
   ansible.builtin.template:
     src: traefik-dynamic.yml.j2
-    dest: /opt/traefik/traefik-dynamic.yml
+    dest: "{{ traefik_config_dir }}/traefik-dynamic.yml"
     mode: "0644"
   notify: Restart Traefik
 
 - name: Ensure acme.json exists with correct permissions
   ansible.builtin.file:
-    path: /opt/traefik/acme/acme.json
+    path: "{{ traefik_data_dir }}/acme/acme.json"
     state: touch
     owner: root
     group: root
@@ -39,7 +39,7 @@
 - name: Deploy Traefik container with CLI arguments
   community.docker.docker_container:
     name: traefik
-    image: traefik:v3
+    image: "{{ traefik_image_name }}:{{ traefik_image_tag }}"
     pull: missing
     restart_policy: unless-stopped
     network_mode: host
@@ -55,7 +55,7 @@
       --entrypoints.websecure.address=:443
       --providers.docker.exposedbydefault=false
       --providers.docker.watch=true
-      --providers.file.filename=/traefik-dynamic.yml
+      --providers.file.filename={{ traefik_config_dir }}/traefik-dynamic.yml
       --providers.file.watch=true
       --certificatesresolvers.step-ca.acme.email={{ traefik_acme_email }}
       --certificatesresolvers.step-ca.acme.storage=/acme/acme.json
@@ -63,8 +63,8 @@
       --certificatesresolvers.step-ca.acme.tlschallenge=true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /opt/traefik/traefik-dynamic.yml:/traefik-dynamic.yml:ro
-      - /opt/traefik/acme:/acme
+      - "{{ traefik_config_dir }}/traefik-dynamic.yml:/traefik-dynamic.yml:ro"
+      - "{{ traefik_data_dir }}/acme:/acme"
       - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
     labels:
       traefik.enable: "false"

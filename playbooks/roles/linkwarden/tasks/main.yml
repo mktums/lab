@@ -6,5 +6,5 @@
     name: common
     tasks_from: register_cname
   vars:
-    cname_name: "{{ linkwarden_cname_name | default('links.' + lan_domain) }}"
+    cname_name: "{{ linkwarden_cname }}.{{ lan_domain }}"
     cname_target: "{{ linkwarden_cname_target | default(inventory_hostname + '.' + lan_domain) }}"

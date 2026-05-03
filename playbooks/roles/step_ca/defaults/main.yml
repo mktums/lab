@@ -1,0 +1,18 @@
+# step-ca defaults
+
+# Image
+step_ca_image_name: "smallstep/step-ca"
+step_ca_image_tag: "0.30.1"
+
+# Paths
+step_ca_data_dir: "{{ docker_data_base }}/step-ca"
+step_ca_config_dir: "/opt/step-ca"
+
+# Network
+step_ca_port: 8443
+
+# Display name for CA (shown in cert subjects)
+step_ca_name: "Homelab CA"
+
+# CNAME subdomain (without .{{ lan_domain }})
+step_ca_cname: "step-ca"

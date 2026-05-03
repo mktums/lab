@@ -70,6 +70,30 @@ If any `playbooks/services/<service>.yml` sets variables explicitly, move those 
 
 Run each service playbook individually and confirm no "undefined variable" errors. The playbooks should work with zero extra-vars beyond what's in vault/secrets.yml.
 
+## Status: ✅ DONE (2026-05-03)
+
+All 9 roles refactored. Additional fixes discovered during implementation:
+
+### Extra changes beyond plan
+
+| Change | Detail |
+|---|---|
+| `beszel` + `beszel_agent` unified | Single role with group-based guards, SMART devices/caps wired |
+| `traefik` `/srv` + `/opt` split | Container data (certs) → `/srv`, Ansible config → `/opt` |
+| `downloads_dir` per-host override | lab1: `/mnt/reds/downloads`, lab2: `/data/downloads` |
+| `inpx-web` build/deploy split | Files moved to role `files/` dir (Ansible convention) |
+| Inventory `.lan` decoupling | Hosts use `hostname.{{ lan_domain }}`, no hardcoded domains |
+| Daemon-level DNS | `/etc/docker/daemon.json` with router DNS, replaces per-container `dns_servers` |
+| CNAME pattern unified | `<svc>_cname: "subdomain"` in defaults, tasks use `{{ _cname }}.{{ lan_domain }}` |
+| Image pinning pattern | Split into `<svc>_image_name` + `<svc>_image_tag`, combined as `{{ _name }}:{{ _tag }}` |
+
+### Lessons learned
+
+- Single quotes in YAML dict/list literals **prevent** Jinja interpolation (`set_fact` gotcha)
+- Numeric env vars need `| string` for Docker compatibility
+- Cross-role dependencies (e.g., traefik → step_ca_port) need fallback defaults
+- NVMe SMART needs controller device (`/dev/nvme0`), not namespace (`nvme0n1`)
+
 ## Rollback
 
 Each change is a simple variable move — defaults can be removed and values restored to inventory if anything breaks. No structural changes, no logic changes.

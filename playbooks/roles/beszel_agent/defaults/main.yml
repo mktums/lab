@@ -1,3 +1,0 @@
----
-beszel_hub_host: "beszel.{{ lan_domain }}"
-beszel_hub_port: 8090
