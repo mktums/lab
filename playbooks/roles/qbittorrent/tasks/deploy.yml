@@ -31,7 +31,7 @@
       - /mnt/reds/downloads:/downloads
     labels:
       traefik.enable: "true"
-      traefik.http.routers.qbittorrent.rule: "Host(`qbit{{ lab_index }}.{{ lan_domain }}`)"
+      traefik.http.routers.qbittorrent.rule: "Host(`qbit.{{ inventory_hostname }}.{{ lan_domain }}`)"
       traefik.http.routers.qbittorrent.entrypoints: "websecure"
       traefik.http.routers.qbittorrent.tls: "true"
       traefik.http.routers.qbittorrent.tls.certresolver: "step-ca"

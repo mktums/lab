@@ -1,4 +1,7 @@
 ---
+# OpenWrt has no Python interpreter and very limited storage — automatic fact gathering
+# (which requires Python) is impractical to install on the device. We do a minimal manual
+# setup call in openwrt_base where needed instead.
 - name: Configure OpenWrt router
   hosts: routers
   gather_facts: false

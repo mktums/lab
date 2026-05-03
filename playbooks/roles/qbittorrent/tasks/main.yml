@@ -5,5 +5,5 @@
     name: common
     tasks_from: register_cname
   vars:
-    cname_name: "{{ qbittorrent_cname_name | default('qbit' + (lab_index | string) + '.' + lan_domain) }}"
+    cname_name: "{{ qbittorrent_cname_name | default('qbit.' + inventory_hostname + '.' + lan_domain) }}"
     cname_target: "{{ qbittorrent_cname_target | default(inventory_hostname + '.' + lan_domain) }}"

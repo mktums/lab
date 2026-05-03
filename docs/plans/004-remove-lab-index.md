@@ -1,3 +1,5 @@
+> **✅ Done** (2026-05-03) — Implemented. DNS migrated from `qbit1.lan`/`qbit2.lan` → `qbit.lab1.lan`/`qbit.lab2.lan`.
+
 # 004: Remove `lab_index` — use inventory_hostname directly
 
 ## Motivation

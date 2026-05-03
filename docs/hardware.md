@@ -30,28 +30,28 @@
 | **Name** | **Volume** | **Type** | **Use** |
 | --- | --- | --- | --- |
 | SiliconPower Flash Drive | 4 GB | Flash | Document transfer, unattended.xml, etc |
-| MSI (came with MB) | 16 GB | Flash | MSI MB drivers (4.5GB, rest is free) |
-| SanDisk Extreme | 32 GB | Flash | Ventoy |
+| MSI (came with MB) | 16 GB | Flash | MSI MB drivers (4.5GB, rest is free, writable) |
+| SanDisk Extreme | 64 GB | Flash | Ventoy |
 | Samsung Samsung EVO Plus | 256 GB | microSD | --- |
 | Samsung T7 Shield | 2 TB | USB SSD | External drive |
 
 ## Other devices
 
-All are legacy :(
+### Usable
 
 - MacBook Pro 2017 13" 128GB
 - Huawei Mate 20 Pro (LYA-L29)
 - ONYX BOOX Edison
 
-## IoT Devices
+#### IoT Devices
 
 - Yandex.Station Lite (YNDX-00025)
 - 2x Yandex.Lamp 3 (YNDX-00018)
 
-## Spare Hardware
+### Spare Hardware
 
 - TP-Link Archer C1200
 - Seagate Momentus Thin 320GB
 - SODIMM 32Gb DDR4 2400
 - Intel Core i3 2330M
-
+- Intel Celeron B830
