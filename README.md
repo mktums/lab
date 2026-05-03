@@ -55,7 +55,7 @@ Internet
     │   ├── beszel         :8090 (via Traefik)
     │   │   └── beszel.lan
     │   └── qbittorrent    (via Traefik)
-    │       └── qbit1.lan
+    │       └── qbit.lab1.lan
     │
     └── lab2  10.10.10.11  (MAC 2c:56:dc:7b:69:d1)
         Ubuntu Server 24.04
@@ -64,7 +64,7 @@ Internet
         │   └── traefik.lab2.lan  (dashboard, basic auth)
         ├── portainer edge agent  (connects to portainer.lan:8000)
         ├── qbittorrent    (via Traefik)
-        │   └── qbit2.lan
+        │   └── qbit.lab2.lan
         └── inpx-web       (via Traefik)
             └── lib.lan
 
@@ -80,8 +80,8 @@ DNS (*.lan resolved by dnsmasq):
   traefik.lab2.lan    → lab2.lan     (CNAME)
   portainer.lan       → lab1.lan     (CNAME)
   vw.lan              → lab1.lan     (CNAME)
-  qbit1.lan           → lab1.lan     (CNAME)
-  qbit2.lan           → lab2.lan     (CNAME)
+  qbit.lab1.lan       → lab1.lan     (CNAME)
+  qbit.lab2.lan       → lab2.lan     (CNAME)
   lib.lan             → lab2.lan     (CNAME)
   db.lan              → lab1.lan     (CNAME)
   links.lan           → lab1.lan     (CNAME)
