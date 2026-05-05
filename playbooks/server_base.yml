@@ -2,6 +2,7 @@
 - name: Configure base server
   hosts: servers
   become: true
+  tags: [server_base]
   vars_files:
     - ../vault/secrets.yml
   roles:

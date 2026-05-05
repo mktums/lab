@@ -2,6 +2,7 @@
 - name: Deploy inpx-web + liberama
   hosts: inpx_web_hosts
   become: true
+  tags: [inpx_web]
   vars_files:
     - ../../vault/secrets.yml
   roles:

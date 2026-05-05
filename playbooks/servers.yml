@@ -1,6 +1,6 @@
 ---
 # Dependency Chain
-# This playbook MUST be run in order. Plays are interdependent:
+# Plays are interdependent — run full playbook or use --tags carefully:
 #
 #   server_base       → Packages, SSH keys, timezone, locales, security hardening
 #   docker            → Docker Compose + NVIDIA Container Toolkit
@@ -13,6 +13,12 @@
 # Critical ordering:
 #   1. step_ca → install_ca_cert → traefik (cert generation)
 #   2. traefik → all services with traefik.enable: "true"
+#
+# Selective deployment via tags:
+#   ansible-playbook servers.yml --tags traefik       # only traefik
+#   ansible-playbook servers.yml --skip-tags step_ca   # everything except step-ca
+#
+# Note: when using --tags, you are responsible for respecting dependency order.
 - import_playbook: server_base.yml
 - import_playbook: docker.yml
 - import_playbook: services/step_ca.yml

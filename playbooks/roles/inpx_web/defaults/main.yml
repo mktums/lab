@@ -2,7 +2,7 @@
 
 # Image
 inpx_web_image_name: "inpx-web"
-inpx_web_image_tag: "latest"
+inpx_web_image_tag: "local"
 
 # Paths
 inpx_web_data_dir: "{{ docker_data_base }}/inpx-web"

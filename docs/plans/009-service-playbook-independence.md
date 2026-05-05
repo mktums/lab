@@ -40,9 +40,18 @@ Fallback defaults mask these dependencies until runtime failures occur.
 - Benefit: dependencies are visible, no hidden fallbacks
 - Cost: more playbook boilerplate
 
-## Recommendation
+## Status: ✅ DONE (2026-05-05)
 
-Option B or C. Option A is unsustainable as role count grows.
+Kept `import_playbook` structure (not fully consolidated inline) because Ansible's vault decryption timing requires it — each imported playbook loads its `vars_files` at parse time, before group_vars evaluation. Inline plays in one file don't trigger early enough.
+
+Tried dependency injection via `tasks_from: _no_op` but discovered play-level roles ignore `tasks_from` and run full role tasks anyway (tested, confirmed). Switched to explicit vars — simpler, more reliable.
+
+### Extra changes beyond plan
+
+- Added tags to all service playbooks for selective deployment (`--tags`/`--skip-tags`)
+- Updated servers.yml header with tag usage documentation
+- Fixed inpx_web image tag: `latest` → `local` (matches actual built image)
+- Created missing install_ca_cert handler (`update-ca-certificates`)
 
 ## Affected files
 

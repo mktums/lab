@@ -11,5 +11,3 @@ traefik_config_dir: "/opt/traefik"                  # dynamic config (our templa
 # CNAME subdomain (without .{{ inventory_hostname }}.{{ lan_domain }})
 traefik_cname: "traefik"
 
-# Dependencies (synced with other roles, fallback here)
-step_ca_port: 8443

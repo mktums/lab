@@ -2,6 +2,7 @@
 - name: Deploy Beszel (hub + agents)
   hosts: beszel_agent_hosts
   become: true
+  tags: [beszel]
   vars_files:
     - ../../vault/secrets.yml
   roles:

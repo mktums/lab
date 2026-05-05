@@ -2,7 +2,10 @@
 - name: Deploy Traefik
   hosts: traefik_hosts
   become: true
+  tags: [traefik]
   vars_files:
     - ../../vault/secrets.yml
+  vars:
+    step_ca_port: 8443   # from roles/step_ca/defaults/main.yml (SOT)
   roles:
     - role: traefik
