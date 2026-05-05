@@ -1,0 +1,6 @@
+---
+- name: Restart meilisearch
+  community.docker.docker_container:
+    name: meilisearch
+    state: started
+    restart: true

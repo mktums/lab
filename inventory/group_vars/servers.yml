@@ -80,6 +80,9 @@ qbittorrent_password: "{{ vault_qbittorrent_password }}"
 # Postgres
 postgres_password: "{{ vault_postgres_password }}"
 
+# Meilisearch
+meilisearch_master_key: "{{ vault_linkwarden_meili_master_key }}"
+
 # Linkwarden
 linkwarden_nextauth_secret: "{{ vault_linkwarden_nextauth_secret }}"
 linkwarden_meili_master_key: "{{ vault_linkwarden_meili_master_key }}"

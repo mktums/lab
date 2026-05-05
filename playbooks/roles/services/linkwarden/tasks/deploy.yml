@@ -5,11 +5,6 @@
     state: directory
     mode: "0755"
 
-- name: Ensure linkwarden Docker network exists
-  community.docker.docker_network:
-    name: linkwarden
-    state: present
-
 - name: Write Linkwarden .env file
   ansible.builtin.copy:
     content: |
@@ -17,27 +12,12 @@
       NEXTAUTH_URL=https://{{ linkwarden_cname }}.{{ lan_domain }}/api/v1/auth
       BASE_URL=https://{{ linkwarden_cname }}.{{ lan_domain }}
       DATABASE_URL=postgresql://linkwarden:{{ linkwarden_db_password }}@db.{{ lan_domain }}:{{ postgres_port }}/linkwarden
-      MEILI_HOST=http://meilisearch:7700
+      MEILI_HOST=http://meili.{{ lan_domain }}:{{ meilisearch_port }}
       MEILI_MASTER_KEY={{ linkwarden_meili_master_key }}
       STORAGE_FOLDER=/data
     dest: "{{ linkwarden_data_dir }}/.env"
     mode: "0600"
     backup: true
-
-- name: Deploy Meilisearch container
-  community.docker.docker_container:
-    name: meilisearch
-    image: "{{ linkwarden_meili_image_name }}:{{ linkwarden_meili_image_tag }}"
-    pull: missing
-    restart_policy: unless-stopped
-    networks:
-      - name: linkwarden
-    volumes:
-      - "{{ linkwarden_data_dir }}/meilisearch:/meili_data"
-    env:
-      MEILI_MASTER_KEY: "{{ linkwarden_meili_master_key }}"
-      MEILI_NO_ANALYTICS: "true"
-  notify: Restart linkwarden
 
 - name: Deploy Linkwarden container
   community.docker.docker_container:
@@ -45,8 +25,6 @@
     image: "{{ linkwarden_image_name }}:{{ linkwarden_image_tag }}"
     pull: missing
     restart_policy: unless-stopped
-    networks:
-      - name: linkwarden
     volumes:
       - "{{ linkwarden_data_dir }}/data:/data/data"
     env_file: "{{ linkwarden_data_dir }}/.env"

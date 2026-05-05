@@ -1,0 +1,9 @@
+---
+- name: Deploy Meilisearch
+  hosts: linkwarden_hosts
+  become: true
+  tags: [meilisearch]
+  vars_files:
+    - ../../vault/secrets.yml
+  roles:
+    - role: meilisearch

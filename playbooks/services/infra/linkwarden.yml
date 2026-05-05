@@ -6,6 +6,6 @@
   vars_files:
     - ../../vault/secrets.yml
   vars:
-    postgres_port: 5432   # from roles/postgres/defaults/main.yml (SOT)
+    postgres_port: 5432   # from meta/postgres/defaults/main.yml (SOT)
   roles:
     - role: linkwarden

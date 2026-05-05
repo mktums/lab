@@ -1,0 +1,6 @@
+# Meilisearch defaults
+
+meilisearch_image_name: "getmeili/meilisearch"
+meilisearch_image_tag: "latest"
+meilisearch_port: 7700
+meilisearch_data_dir: "{{ docker_data_base }}/meilisearch"

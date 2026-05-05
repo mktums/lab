@@ -260,3 +260,7 @@ $RECYCLE.BIN/
 
 # Retry files generated for failed Ansible playbook runs
 *.retry
+
+.agents/
+.kilo/
+AGENTS.md

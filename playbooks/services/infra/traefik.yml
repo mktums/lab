@@ -6,6 +6,6 @@
   vars_files:
     - ../../vault/secrets.yml
   vars:
-    step_ca_port: 8443   # from roles/step_ca/defaults/main.yml (SOT)
+    step_ca_port: 8443   # fallback default; SOT in services/step_ca/defaults/main.yml
   roles:
     - role: traefik

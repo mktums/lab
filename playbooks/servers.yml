@@ -2,17 +2,23 @@
 # Dependency Chain
 # Plays are interdependent — run full playbook or use --tags carefully:
 #
+# Structure:
+#   services/meta/    → Shared infrastructure (postgres, meilisearch)
+#   services/infra/   → Application services (traefik, vaultwarden, etc.)
+#
+# Order:
 #   server_base       → Packages, SSH keys, timezone, locales, security hardening
 #   docker            → Docker Compose + NVIDIA Container Toolkit
 #   step_ca           → Internal CA (step-cli) installation
 #   install_ca_cert   → Trust step-ca cert across servers
 #   traefik           → Reverse proxy (required before any service using traefik labels)
-#   postgres          → Database server (shared by services that need it)
+#   meta services     → Shared infrastructure consumed by other stacks
 #   [services]        → Individual service deployments
 #
 # Critical ordering:
 #   1. step_ca → install_ca_cert → traefik (cert generation)
 #   2. traefik → all services with traefik.enable: "true"
+#   3. meta services before consumers (postgres/meilisearch → linkwarden)
 #
 # Selective deployment via tags:
 #   ansible-playbook servers.yml --tags traefik       # only traefik
@@ -21,14 +27,15 @@
 # Note: when using --tags, you are responsible for respecting dependency order.
 - import_playbook: server_base.yml
 - import_playbook: docker.yml
-- import_playbook: services/step_ca.yml
+- import_playbook: services/infra/step_ca.yml
 - import_playbook: install_ca_cert.yml
-- import_playbook: services/traefik.yml
-- import_playbook: services/beszel.yml
-- import_playbook: services/portainer.yml
-- import_playbook: services/vaultwarden.yml
-- import_playbook: services/qbittorrent.yml
-- import_playbook: services/portainer_edge.yml
-- import_playbook: services/inpx_web.yml
-- import_playbook: services/postgres.yml
-- import_playbook: services/linkwarden.yml
+- import_playbook: services/infra/traefik.yml
+- import_playbook: services/meta/meilisearch.yml
+- import_playbook: services/meta/postgres.yml
+- import_playbook: services/infra/beszel.yml
+- import_playbook: services/infra/portainer.yml
+- import_playbook: services/infra/vaultwarden.yml
+- import_playbook: services/infra/qbittorrent.yml
+- import_playbook: services/infra/portainer_edge.yml
+- import_playbook: services/infra/inpx_web.yml
+- import_playbook: services/infra/linkwarden.yml

@@ -1,0 +1,21 @@
+---
+- name: Create Meilisearch data directory
+  ansible.builtin.file:
+    path: "{{ meilisearch_data_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Deploy Meilisearch container
+  community.docker.docker_container:
+    name: meilisearch
+    image: "{{ meilisearch_image_name }}:{{ meilisearch_image_tag }}"
+    pull: missing
+    restart_policy: unless-stopped
+    published_ports:
+      - "{{ meilisearch_port }}:7700"
+    volumes:
+      - "{{ meilisearch_data_dir }}/meilisearch:/meili_data"
+    env:
+      MEILI_MASTER_KEY: "{{ meilisearch_master_key }}"
+      MEILI_NO_ANALYTICS: "true"
+  notify: Restart meilisearch
