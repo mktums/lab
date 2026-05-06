@@ -4,8 +4,6 @@
   become: true
   tags: [linkwarden]
   vars_files:
-    - ../../vault/secrets.yml
-  vars:
-    postgres_port: 5432   # from meta/postgres/defaults/main.yml (SOT)
+    - ../../../vault/secrets.yml
   roles:
     - role: linkwarden

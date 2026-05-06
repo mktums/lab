@@ -65,7 +65,9 @@
   ansible.builtin.command: docker logs qbittorrent
   register: _qbit_logs
   changed_when: false
-  when: _qbit_login_check.content != 'Ok.'
+  when:
+    - not ansible_check_mode
+    - _qbit_login_check.content != 'Ok.'
 
 - name: Extract temporary password
   ansible.builtin.set_fact:

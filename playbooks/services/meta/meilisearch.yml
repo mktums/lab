@@ -4,6 +4,6 @@
   become: true
   tags: [meilisearch]
   vars_files:
-    - ../../vault/secrets.yml
+    - ../../../vault/secrets.yml
   roles:
     - role: meilisearch

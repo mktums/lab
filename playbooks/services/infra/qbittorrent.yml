@@ -4,6 +4,6 @@
   become: true
   tags: [qbittorrent]
   vars_files:
-    - ../../vault/secrets.yml
+    - ../../../vault/secrets.yml
   roles:
     - role: qbittorrent

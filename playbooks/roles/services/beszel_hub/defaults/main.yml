@@ -1,0 +1,14 @@
+# Beszel Hub defaults
+
+# Image
+beszel_image_name: "henrygd/beszel"
+beszel_image_tag: "latest"
+
+# Paths
+beszel_data_dir: "{{ docker_data_base }}/beszel"
+
+# Network
+beszel_port: 8090
+
+# CNAME subdomain (without .{{ lan_domain }})
+beszel_cname: "beszel"

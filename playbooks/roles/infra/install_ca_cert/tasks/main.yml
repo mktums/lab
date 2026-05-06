@@ -18,4 +18,6 @@
     dest: /usr/local/share/ca-certificates/step-ca-root.crt
     mode: "0644"
   notify: Update CA certificates
-  when: _root_cert_response is defined
+  when:
+    - not ansible_check_mode
+    - _root_cert_response is defined

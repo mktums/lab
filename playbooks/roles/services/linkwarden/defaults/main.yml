@@ -9,3 +9,9 @@ linkwarden_data_dir: "{{ docker_data_base }}/linkwarden"
 
 # CNAME subdomain (without .{{ lan_domain }})
 linkwarden_cname: "links"
+
+# --- Cross-role variables from meta/shared_vars dependency ---
+# postgres_port: 5432    ← SOT in meta/shared_vars/defaults/main.yml
+# meilisearch_port: 7700 ← SOT in meta/shared_vars/defaults/main.yml
+
+

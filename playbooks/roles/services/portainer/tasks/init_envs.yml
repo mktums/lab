@@ -2,92 +2,95 @@
 # Registers the local Docker environment and sets PublicURL on all environments.
 # Runs after Portainer is up.
 
-- name: Wait for Portainer API to be ready
-  ansible.builtin.uri:
-    url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/status"
-    validate_certs: false
-    status_code: 200
-  register: _portainer_ready
-  until: _portainer_ready.status == 200
-  retries: 15
-  delay: 4
-  delegate_to: localhost
-  become: false
+- name: Initialize Portainer environments
+  block:
+    - name: Wait for Portainer API to be ready
+      ansible.builtin.uri:
+        url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/status"
+        validate_certs: false
+        status_code: 200
+      register: _portainer_ready
+      until: _portainer_ready.status == 200
+      retries: 15
+      delay: 4
+      delegate_to: localhost
+      become: false
 
-- name: Authenticate with Portainer API
-  ansible.builtin.uri:
-    url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/auth"
-    method: POST
-    body_format: json
-    body:
-      username: "admin"
-      password: "{{ portainer_admin_password }}"
-    validate_certs: false
-    status_code: 200
-  register: _portainer_auth
-  delegate_to: localhost
-  become: false
-  no_log: true
+    - name: Authenticate with Portainer API
+      ansible.builtin.uri:
+        url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/auth"
+        method: POST
+        body_format: json
+        body:
+          username: "admin"
+          password: "{{ portainer_admin_password }}"
+        validate_certs: false
+        status_code: 200
+      register: _portainer_auth
+      delegate_to: localhost
+      become: false
+      no_log: true
 
-- name: Get existing environments
-  ansible.builtin.uri:
-    url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/endpoints"
-    headers:
-      Authorization: "Bearer {{ _portainer_auth.json.jwt }}"
-    validate_certs: false
-    status_code: 200
-  register: _portainer_endpoints
-  delegate_to: localhost
-  become: false
+    - name: Get existing environments
+      ansible.builtin.uri:
+        url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/endpoints"
+        headers:
+          Authorization: "Bearer {{ _portainer_auth.json.jwt }}"
+        validate_certs: false
+        status_code: 200
+      register: _portainer_endpoints
+      delegate_to: localhost
+      become: false
 
-- name: Register local Docker environment if not present
-  ansible.builtin.uri:
-    url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/endpoints"
-    method: POST
-    headers:
-      Authorization: "Bearer {{ _portainer_auth.json.jwt }}"
-    body_format: form-multipart
-    body:
-      Name: "{{ inventory_hostname }}"
-      EndpointCreationType: "1"
-      URL: "unix:///var/run/docker.sock"
-      PublicURL: "{{ inventory_hostname }}.{{ lan_domain }}"
-    validate_certs: false
-    status_code: 200
-  delegate_to: localhost
-  become: false
-  when: >-
-    _portainer_endpoints.json
-    | selectattr('Name', 'equalto', inventory_hostname)
-    | list | length == 0
+    - name: Register local Docker environment if not present
+      ansible.builtin.uri:
+        url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/endpoints"
+        method: POST
+        headers:
+          Authorization: "Bearer {{ _portainer_auth.json.jwt }}"
+        body_format: form-multipart
+        body:
+          Name: "{{ inventory_hostname }}"
+          EndpointCreationType: "1"
+          URL: "unix:///var/run/docker.sock"
+          PublicURL: "{{ inventory_hostname }}.{{ lan_domain }}"
+        validate_certs: false
+        status_code: 200
+      delegate_to: localhost
+      become: false
+      when: >-
+        _portainer_endpoints.json
+        | selectattr('Name', 'equalto', inventory_hostname)
+        | list | length == 0
 
-- name: Get environments again after possible creation
-  ansible.builtin.uri:
-    url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/endpoints"
-    headers:
-      Authorization: "Bearer {{ _portainer_auth.json.jwt }}"
-    validate_certs: false
-    status_code: 200
-  register: _portainer_endpoints
-  delegate_to: localhost
-  become: false
+    - name: Get environments again after possible creation
+      ansible.builtin.uri:
+        url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/endpoints"
+        headers:
+          Authorization: "Bearer {{ _portainer_auth.json.jwt }}"
+        validate_certs: false
+        status_code: 200
+      register: _portainer_endpoints
+      delegate_to: localhost
+      become: false
 
-- name: Find this host's environment
-  ansible.builtin.set_fact:
-    _this_env: >-
-      {{ _portainer_endpoints.json | selectattr('Name', 'equalto', inventory_hostname) | list | first | default({}) }}
+    - name: Find this host's environment
+      ansible.builtin.set_fact:
+        _this_env: >-
+          {{ _portainer_endpoints.json | selectattr('Name', 'equalto', inventory_hostname) | list | first | default({}) }}
 
-- name: Set PublicURL for this environment
-  ansible.builtin.uri:
-    url: "https://portainer.{{ lan_domain }}/api/endpoints/{{ _this_env.Id }}"
-    method: PUT
-    headers:
-      Authorization: "Bearer {{ _portainer_auth.json.jwt }}"
-    body_format: json
-    body:
-      PublicURL: "{{ inventory_hostname }}.{{ lan_domain }}"
-    validate_certs: false
-    status_code: 200
-  delegate_to: localhost
-  become: false
-  when: _this_env.Id is defined
+    - name: Set PublicURL for this environment
+      ansible.builtin.uri:
+        url: "https://portainer.{{ lan_domain }}/api/endpoints/{{ _this_env.Id }}"
+        method: PUT
+        headers:
+          Authorization: "Bearer {{ _portainer_auth.json.jwt }}"
+        body_format: json
+        body:
+          PublicURL: "{{ inventory_hostname }}.{{ lan_domain }}"
+        validate_certs: false
+        status_code: 200
+      delegate_to: localhost
+      become: false
+      when: _this_env.Id is defined
+  when: not ansible_check_mode

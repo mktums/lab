@@ -4,9 +4,11 @@
 
 [007-migrate-to-docker-compose.md](007-migrate-to-docker-compose.md) — Migrate from `docker_container` to Docker Compose
 
-## Status
+## Status: ✅ DONE (split) / ⏸️ PENDING (compose)
 
+- [x] Split into `beszel_hub` + `beszel` roles (done as part of 007-0 restructure)
 - [ ] Create compose template for beszel hub
+- [ ] Create compose template for beszel agent
 - [ ] Create compose template for beszel agent (host network)
 - [ ] Replace docker_container with docker_compose_v2
 - [ ] Add wait-for-hub probe on agent side

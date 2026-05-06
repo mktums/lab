@@ -4,6 +4,6 @@
   become: true
   tags: [step_ca]
   vars_files:
-    - ../../vault/secrets.yml
+    - ../../../vault/secrets.yml
   roles:
     - role: step_ca

@@ -1,0 +1,48 @@
+---
+# Read hub public key from vault
+- name: Set hub key fact
+  ansible.builtin.set_fact:
+    _beszel_hub_key: "{{ beszel_hub_key }}"
+
+- name: Register Beszel systems
+  block:
+    - name: Authenticate as Beszel user
+      ansible.builtin.uri:
+        url: "http://localhost:{{ beszel_port }}/api/collections/users/auth-with-password"
+        method: POST
+        body_format: json
+        body:
+          identity: "{{ beszel_admin_email }}"
+          password: "{{ beszel_admin_password }}"
+        status_code: 200
+      register: _beszel_user_auth
+      no_log: true
+
+    - name: Get existing systems
+      ansible.builtin.uri:
+        url: "http://localhost:{{ beszel_port }}/api/collections/systems/records?perPage=100"
+        headers:
+          Authorization: "{{ _beszel_user_auth.json.token }}"
+        status_code: 200
+      register: _existing_systems
+
+    - name: Set existing system names
+      ansible.builtin.set_fact:
+        _existing_system_names: "{{ _existing_systems.json['items'] | map(attribute='name') | list }}"
+
+    - name: Register remote systems
+      ansible.builtin.uri:
+        url: "http://localhost:{{ beszel_port }}/api/collections/systems/records"
+        method: POST
+        headers:
+          Authorization: "{{ _beszel_user_auth.json.token }}"
+        body_format: json
+        body:
+          name: "{{ item }}"
+          host: "{{ item }}.{{ lan_domain }}"
+          port: 45876
+          users: ["{{ _beszel_user_auth.json.record.id }}"]
+        status_code: 200
+      loop: "{{ groups['beszel_agent_hosts'] }}"
+      when: "item not in _existing_system_names"
+  when: not ansible_check_mode

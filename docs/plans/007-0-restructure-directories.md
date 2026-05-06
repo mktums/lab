@@ -4,13 +4,15 @@
 
 [007-migrate-to-docker-compose.md](007-migrate-to-docker-compose.md) — Migrate from `docker_container` to Docker Compose
 
-## Status
+## Status: ✅ DONE (2026-05-05)
 
-- [ ] Move roles into subdirectories
-- [ ] Extract meilisearch from linkwarden role
-- [ ] Split playbooks/services/ into meta/ + infra/
-- [ ] Update servers.yml imports
-- [ ] Validate with `ansible-playbook --list-tasks`
+- [x] Move roles into subdirectories
+- [x] Extract meilisearch from linkwarden role
+- [x] Split playbooks/services/ into meta/ + infra/
+- [x] Update servers.yml imports
+- [x] Validate with `ansible-playbook --check`
+- [x] Resolve cross-role variable dependencies (meta deps, no shared_vars)
+- [x] Fix check-mode compatibility (`block: when: not ansible_check_mode`)
 
 ## Motivation
 
@@ -31,7 +33,7 @@ Currently all roles and service playbooks are flat under their directories. Meta
 | `roles/vaultwarden/` | `roles/services/vaultwarden/` | Application service |
 | `roles/qbittorrent/` | `roles/services/qbittorrent/` | Application service |
 | `roles/linkwarden/` | `roles/services/linkwarden/` | Application service (meilisearch removed) |
-| `roles/beszel/` | `roles/services/beszel/` | Application service |
+| `roles/beszel/` | `roles/services/beszel_hub/` + `roles/services/beszel/` | Split hub+agent (like portainer/portainer_edge) |
 | `roles/inpx_web/` | `roles/services/inpx_web/` | Application service |
 | `roles/server_base/` | `roles/infra/server_base/` | Host-level setup, not stack-based |
 | `roles/docker/` | `roles/infra/docker/` | Host-level setup |
@@ -103,15 +105,22 @@ git mv playbooks/services/postgres.yml playbooks/services/meta/postgres.yml
 git mv playbooks/services/*.yml playbooks/services/infra/  # remaining
 ```
 
-### Step 5: Update servers.yml imports
+### Step 5: Consolidate into single play
 
-Replace flat paths with new structure:
+Replaced 14 `import_playbook` entries with a single play using roles + meta deps:
 
 ```yaml
-- import_playbook: services/meta/postgres.yml
-- import_playbook: services/meta/meilisearch.yml
-- import_playbook: services/infra/step_ca.yml
-# ... etc
+- name: Deploy homelab services
+  hosts: servers
+  become: true
+  vars_files:
+    - ../vault/secrets.yml
+  roles:
+    - role: server_base
+      tags: [server_base]
+    - role: docker
+      tags: [docker]
+    # ... etc (see servers.yml for full list)
 ```
 
 ### Step 6: Validate
@@ -134,6 +143,33 @@ ansible-playbook playbooks/servers.yml --check  # dry-run, should show no errors
 | `playbooks/services/meta/postgres.yml` | Moved + new meilisearch.yml created |
 | `playbooks/services/infra/*.yml` | Moved (9 playbooks) |
 | `playbooks/servers.yml` | Update all import paths |
+
+## Implementation notes
+
+### Cross-role variables — meta dependency approach
+
+Roles that consume another role's vars (traefik → step_ca_port, linkwarden → postgres_port + meilisearch_port) depend via `meta/main.yml`.
+
+Key discovery: Ansible's meta dependencies resolve both defaults AND execute tasks. Within a single play this is fine — roles are deduplicated (`play.role_cache`). Between separate plays (old architecture) it caused double execution.
+
+Solution: consolidate to one play with `hosts: servers`, use role meta deps for cross-role vars, and rely on Ansible's built-in deduplication.
+
+### Playbook consolidation
+
+Replaced 14 individual imported playbooks with a single play in `servers.yml`. Benefits:
+- Meta dependency resolution works (single `play.role_cache`)
+- No shared_vars role needed — defaults cascade naturally
+- Simpler structure, easier to understand dependency chain
+
+### Check-mode fixes
+
+Multiple roles had URI/exec chains that fail when tasks are skipped but conditionals still evaluate registered vars. Fixed with `block: when: not ansible_check_mode` pattern in:
+- install_ca_cert/tasks/main.yml
+- qbittorrent/tasks/deploy.yml
+- portainer_edge/tasks/edge_register.yml
+- beszel/tasks/register.yml
+- portainer/tasks/init_envs.yml
+- linkwarden/tasks/db_init.yml
 
 ## Risks
 

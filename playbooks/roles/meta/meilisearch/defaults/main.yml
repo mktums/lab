@@ -2,5 +2,5 @@
 
 meilisearch_image_name: "getmeili/meilisearch"
 meilisearch_image_tag: "latest"
-meilisearch_port: 7700
+# meilisearch_port: 7700  ← SOT in meta/shared_vars/defaults/main.yml
 meilisearch_data_dir: "{{ docker_data_base }}/meilisearch"

@@ -11,3 +11,6 @@ traefik_config_dir: "/opt/traefik"                  # dynamic config (our templa
 # CNAME subdomain (without .{{ inventory_hostname }}.{{ lan_domain }})
 traefik_cname: "traefik"
 
+# --- Cross-role variables from meta/shared_vars dependency ---
+# step_ca_port: 8443   ← SOT in meta/shared_vars/defaults/main.yml
+

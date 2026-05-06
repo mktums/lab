@@ -1,41 +1,85 @@
 ---
-# Dependency Chain
-# Plays are interdependent — run full playbook or use --tags carefully:
+# Single-play deployment with meta dependency resolution
 #
-# Structure:
-#   services/meta/    → Shared infrastructure (postgres, meilisearch)
-#   services/infra/   → Application services (traefik, vaultwarden, etc.)
+# Dependency chain (resolved automatically via role meta/main.yml):
+#   server_base → docker → step_ca → install_ca_cert → traefik → [services]
+#   postgres + meilisearch → linkwarden (via meta deps)
 #
-# Order:
-#   server_base       → Packages, SSH keys, timezone, locales, security hardening
-#   docker            → Docker Compose + NVIDIA Container Toolkit
-#   step_ca           → Internal CA (step-cli) installation
-#   install_ca_cert   → Trust step-ca cert across servers
-#   traefik           → Reverse proxy (required before any service using traefik labels)
-#   meta services     → Shared infrastructure consumed by other stacks
-#   [services]        → Individual service deployments
+# Roles are deduplicated within this play — dependencies run once.
+# Guards (`when: inventory_hostname in groups[...`) prevent execution on wrong hosts.
 #
-# Critical ordering:
-#   1. step_ca → install_ca_cert → traefik (cert generation)
-#   2. traefik → all services with traefik.enable: "true"
-#   3. meta services before consumers (postgres/meilisearch → linkwarden)
+# Usage:
+#   ansible-playbook servers.yml                     # full deploy
+#   ansible-playbook servers.yml --tags traefik      # traefik + its deps (step_ca)
+#   ansible-playbook servers.yml --limit lab2        # all roles, only on lab2
+#   ansible-playbook servers.yml --tags beszel -e "beszel_token=..."  # selective
 #
-# Selective deployment via tags:
-#   ansible-playbook servers.yml --tags traefik       # only traefik
-#   ansible-playbook servers.yml --skip-tags step_ca   # everything except step-ca
-#
-# Note: when using --tags, you are responsible for respecting dependency order.
-- import_playbook: server_base.yml
-- import_playbook: docker.yml
-- import_playbook: services/infra/step_ca.yml
-- import_playbook: install_ca_cert.yml
-- import_playbook: services/infra/traefik.yml
-- import_playbook: services/meta/meilisearch.yml
-- import_playbook: services/meta/postgres.yml
-- import_playbook: services/infra/beszel.yml
-- import_playbook: services/infra/portainer.yml
-- import_playbook: services/infra/vaultwarden.yml
-- import_playbook: services/infra/qbittorrent.yml
-- import_playbook: services/infra/portainer_edge.yml
-- import_playbook: services/infra/inpx_web.yml
-- import_playbook: services/infra/linkwarden.yml
+- name: Deploy homelab services
+  hosts: servers
+  become: true
+  vars_files:
+    - ../vault/secrets.yml
+
+  roles:
+    # Base infrastructure (runs on all servers via hosts: filter)
+    - role: server_base
+      tags: [server_base]
+
+    - role: docker
+      tags: [docker]
+      when: inventory_hostname in groups.get('docker_hosts', [])
+
+    # CA + reverse proxy chain (step_ca → traefik via meta dep)
+    - role: step_ca
+      tags: [step_ca]
+      when: inventory_hostname in groups.get('step_ca_hosts', [])
+
+    - role: install_ca_cert
+      tags: [install_ca_cert]
+
+    # Meta services (shared infrastructure)
+    - role: meilisearch
+      tags: [meilisearch]
+      when: inventory_hostname in groups.get('linkwarden_hosts', [])
+
+    - role: postgres
+      tags: [postgres]
+      when: inventory_hostname in groups.get('postgres_hosts', [])
+
+    # Application services (meta deps auto-resolve)
+    - role: traefik
+      tags: [traefik]
+      when: inventory_hostname in groups.get('traefik_hosts', [])
+
+    # Beszel (hub + agents split into separate roles)
+    - role: beszel_hub
+      tags: [beszel, beszel_hub]
+      when: inventory_hostname in groups.get('beszel_hosts', [])
+
+    - role: beszel
+      tags: [beszel, beszel_agent]
+      when: inventory_hostname in groups.get('beszel_agent_hosts', [])
+
+    - role: portainer
+      tags: [portainer]
+      when: inventory_hostname in groups.get('portainer_hosts', [])
+
+    - role: vaultwarden
+      tags: [vaultwarden]
+      when: inventory_hostname in groups.get('vaultwarden_hosts', [])
+
+    - role: qbittorrent
+      tags: [qbittorrent]
+      when: inventory_hostname in groups.get('qbittorrent_hosts', [])
+
+    - role: portainer_edge
+      tags: [portainer_edge]
+      when: inventory_hostname in groups.get('portainer_edge_hosts', [])
+
+    - role: inpx_web
+      tags: [inpx_web]
+      when: inventory_hostname in groups.get('inpx_web_hosts', [])
+
+    - role: linkwarden
+      tags: [linkwarden]
+      when: inventory_hostname in groups.get('linkwarden_hosts', [])
