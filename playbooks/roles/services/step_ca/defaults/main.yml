@@ -9,7 +9,7 @@ step_ca_data_dir: "{{ docker_data_base }}/step-ca"
 step_ca_config_dir: "/opt/step-ca"
 
 # Network
-# step_ca_port: 8443  ← SOT in meta/shared_vars/defaults/main.yml
+step_ca_port: 8443
 
 # Display name for CA (shown in cert subjects)
 step_ca_name: "Homelab CA"

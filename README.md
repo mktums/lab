@@ -332,12 +332,12 @@ LC_CTYPE=ru_RU.UTF-8    # Cyrillic recognized as valid letters
 
 ### New service
 
-1. Create `playbooks/roles/<service>/` with `tasks/main.yml` (and `tasks/deploy.yml` if needed), `handlers/main.yml`
+1. Create `playbooks/roles/<service>/` with `tasks/main.yml`, `handlers/main.yml`, `defaults/main.yml`
 2. Add CNAME registration in `tasks/main.yml` using `include_role: common` with `tasks_from: register_cname`
 3. Add a group under `children` in `inventory/hosts.yml`
-4. Add a play to `playbooks/servers.yml`
+4. Add the role to `servers.yml` with appropriate `when:` guard
 5. Add any secrets to `vault/secrets.yml` and vars to `inventory/group_vars/servers.yml`
-6. Run `ansible-playbook playbooks/servers.yml`
+6. Run `ansible-playbook playbooks/servers.yml --tags <service>`
 
 Minimal Traefik labels for a new container:
 

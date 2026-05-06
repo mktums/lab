@@ -8,7 +8,7 @@ postgres_image_tag: "17-alpine"
 postgres_data_dir: "{{ docker_data_base }}/db/postgres"
 
 # Network
-# postgres_port: 5432  ← SOT in meta/shared_vars/defaults/main.yml
+postgres_port: 5432
 
 # Container settings
 postgres_shm_size: "256m"
