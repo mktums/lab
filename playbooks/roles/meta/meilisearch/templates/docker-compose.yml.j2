@@ -10,3 +10,9 @@ services:
     environment:
       MEILI_MASTER_KEY: "{{ meilisearch_master_key }}"
       MEILI_NO_ANALYTICS: "true"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7700/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s

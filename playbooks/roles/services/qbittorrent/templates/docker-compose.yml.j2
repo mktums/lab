@@ -16,6 +16,12 @@ services:
     volumes:
       - "{{ qbittorrent_data_dir }}:/config"
       - "{{ downloads_dir }}:/downloads"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
     labels:
       traefik.enable: "true"
       traefik.http.routers.qbittorrent.rule: "Host(`{{ qbittorrent_cname }}.{{ inventory_hostname }}.{{ lan_domain }}`)"

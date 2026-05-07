@@ -10,6 +10,12 @@ services:
       - "{{ downloads_dir }}:/downloads:ro"
     environment:
       LIB_DOMAIN: "{{ inpx_web_cname }}.{{ lan_domain }}"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:12380/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     labels:
       traefik.enable: "true"
       # inpx-web — owns /

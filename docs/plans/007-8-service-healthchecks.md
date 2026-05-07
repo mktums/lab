@@ -6,9 +6,9 @@
 
 ## Status
 
-- [ ] Audit all services for existing healthcheck support
-- [ ] Create compose template healthchecks where missing
-- [ ] Update deploy tasks with `wait: true` + `wait_timeout`
+- [x] Audit all services for existing healthcheck support
+- [x] Create compose template healthchecks where missing
+- [x] Update deploy tasks with `wait: true` + `wait_timeout`
 
 ## Motivation
 

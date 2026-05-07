@@ -11,6 +11,12 @@ services:
       APP_URL: "https://{{ beszel_hub_cname }}.{{ lan_domain }}"
       USER_EMAIL: "{{ beszel_admin_email }}"
       USER_PASSWORD: "{{ beszel_admin_password }}"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8090/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     labels:
       traefik.enable: "true"
       traefik.http.routers.beszel.rule: "Host(`{{ beszel_hub_cname }}.{{ lan_domain }}`)"

@@ -19,6 +19,8 @@
     files:
       - docker-compose.yml
     state: present
+    wait: true
+    wait_timeout: 300
     pull: missing
   notify: Restart meilisearch
   when: inventory_hostname in groups.get('linkwarden_hosts', [])
