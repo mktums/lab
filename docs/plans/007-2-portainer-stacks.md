@@ -4,13 +4,14 @@
 
 [007-migrate-to-docker-compose.md](007-migrate-to-docker-compose.md) — Migrate from `docker_container` to Docker Compose
 
-## Status
+## Status: ✅ Done — deployed and running
 
-- [ ] Create compose templates for portainer main
-- [ ] Create compose template for portainer edge agent
-- [ ] Replace docker_container with docker_compose_v2
-- [ ] Update handlers
-- [ ] Validate and deploy
+- [x] Create compose templates for portainer main (`templates/docker-compose.yml.j2`)
+- [x] Create compose template for portainer edge agent (`templates/docker-compose.yml.j2`)
+- [x] Replace docker_container with docker_compose_v2 (both roles, `tasks/deploy.yml` / `main.yml`)
+- [x] Update handlers to use docker_compose_v2
+- [x] Verify edge agent re-registration after compose migration (confirmed)
+- [x] Deploy and validate (running in production)
 
 ## Motivation
 

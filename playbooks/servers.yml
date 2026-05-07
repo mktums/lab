@@ -56,7 +56,7 @@
       tags: [beszel, beszel_hub]
       when: inventory_hostname in groups.get('beszel_hosts', [])
 
-    - role: beszel
+    - role: beszel_agent
       tags: [beszel, beszel_agent]
       when: inventory_hostname in groups.get('beszel_agent_hosts', [])
 

@@ -1,9 +1,0 @@
----
-- name: Deploy Portainer
-  hosts: portainer_hosts
-  become: true
-  tags: [portainer]
-  vars_files:
-    - ../../../vault/secrets.yml
-  roles:
-    - role: portainer

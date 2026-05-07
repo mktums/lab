@@ -1,0 +1,28 @@
+---
+services:
+  inpx-web:
+    image: "{{ inpx_web_image_name }}:{{ inpx_web_image_tag }}"
+    restart: unless-stopped
+    ports:
+      - "{{ inpx_web_port }}:12380"
+    volumes:
+      - "{{ inpx_web_data_dir }}:/data"
+      - "{{ downloads_dir }}:/downloads:ro"
+    environment:
+      LIB_DOMAIN: "{{ inpx_web_cname }}.{{ lan_domain }}"
+    labels:
+      traefik.enable: "true"
+      # inpx-web — owns /
+      traefik.http.routers.inpx-web.rule: "Host(`{{ inpx_web_cname }}.{{ lan_domain }}`)"
+      traefik.http.routers.inpx-web.entrypoints: "websecure"
+      traefik.http.routers.inpx-web.service: "inpx-web"
+      traefik.http.routers.inpx-web.tls: "true"
+      traefik.http.routers.inpx-web.tls.certresolver: "step-ca"
+      traefik.http.services.inpx-web.loadbalancer.server.port: "{{ inpx_web_port }}"
+      # liberama — owns /read
+      traefik.http.routers.liberama.rule: "Host(`{{ inpx_web_cname }}.{{ lan_domain }}`) && PathPrefix(`/read`)"
+      traefik.http.routers.liberama.entrypoints: "websecure"
+      traefik.http.routers.liberama.service: "liberama"
+      traefik.http.routers.liberama.tls: "true"
+      traefik.http.routers.liberama.tls.certresolver: "step-ca"
+      traefik.http.services.liberama.loadbalancer.server.port: "{{ inpx_web_liberama_port }}"

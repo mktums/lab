@@ -1,9 +1,0 @@
----
-- name: Deploy Vaultwarden
-  hosts: vaultwarden_hosts
-  become: true
-  tags: [vaultwarden]
-  vars_files:
-    - ../../../vault/secrets.yml
-  roles:
-    - role: vaultwarden

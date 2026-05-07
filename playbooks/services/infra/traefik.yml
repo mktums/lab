@@ -1,9 +1,0 @@
----
-- name: Deploy Traefik
-  hosts: traefik_hosts
-  become: true
-  tags: [traefik]
-  vars_files:
-    - ../../../vault/secrets.yml
-  roles:
-    - role: traefik

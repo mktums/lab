@@ -6,10 +6,9 @@
 
 ## Status
 
-- [ ] Audit all migrated services for existing healthcheck support
+- [ ] Audit all services for existing healthcheck support
 - [ ] Create compose template healthchecks where missing
 - [ ] Update deploy tasks with `wait: true` + `wait_timeout`
-- [ ] Validate and deploy
 
 ## Motivation
 
@@ -25,17 +24,11 @@ Currently, migrated services rely on:
 
 ## Scope
 
-Audit all migrated services (007-1 + 007-3 + 007-4 + 007-5) and create healthchecks where applicable:
+Audit all services and create healthchecks where applicable.
 
-| Service | Current State | Healthcheck Available? | Priority |
-|---------|--------------|----------------------|----------|
-| postgres | Compose migrated ✅ | `pg_isready` built-in | 🔴 High (critical dependency) |
-| vaultwarden | Compose migrated ✅ | HTTP health endpoint `/health` | 🟡 Medium |
-| qbittorrent | Compose migrated ✅ | No official healthcheck (WebUI polling) | 🟢 Low |
-| beszel_hub | Compose migrated ✅ | HTTP port 8090 probe | 🟡 Medium |
-| beszel_agent | Compose migrated ✅ | WebSocket/port probe | ⚪ N/A (agent, no external dependents) |
-| meilisearch | Compose migrated ✅ | `/health` endpoint | 🟡 Medium |
-| linkwarden | Compose migrated ✅ | HTTP port 3000 probe | 🟢 Low (behind traefik already) |
+**When:** Audit will begin after 007-6 (step-ca + traefik) is complete — core infra must be stable before auditing downstream services.
+
+> **Note:** Every service that gets a healthcheck must also have `wait: true` added to its `docker_compose_v2` deploy task. Without it, compose returns as soon as the container is "running" and ignores the healthcheck entirely.
 
 ## Implementation steps
 

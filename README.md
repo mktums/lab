@@ -158,7 +158,7 @@ Do this once per device. After this, all `*.lan` HTTPS services will show a gree
 >
 > 1. Settings → Tokens → create a token → add to `vault_beszel_token`
 > 2. Add System → copy the public key → add to `vault_beszel_hub_key`
-> 3. Re-run `ansible-playbook playbooks/services/infra/beszel.yml` to deploy agents
+> 3. Re-run `ansible-playbook playbooks/servers.yml --tags beszel` to deploy agents
 >
 > **S.M.A.R.T. monitoring**: The Beszel agent is configured with S.M.A.R.T. device mappings and capabilities (`SYS_RAWIO`, `SYS_ADMIN`) for disk health monitoring. Additional filesystems can be monitored by adding extra volume mounts in `inventory/host_vars/<host>.yml`:
 > ```yaml
@@ -278,18 +278,16 @@ ansible-playbook playbooks/router.yml
 ansible-playbook playbooks/server_base.yml
 ansible-playbook playbooks/docker.yml
 
-# Single services
-ansible-playbook playbooks/services/meta/meilisearch.yml
-ansible-playbook playbooks/services/meta/postgres.yml
-ansible-playbook playbooks/services/infra/traefik.yml
-ansible-playbook playbooks/services/infra/beszel.yml      # hub + agents
-ansible-playbook playbooks/services/infra/portainer.yml
-ansible-playbook playbooks/services/infra/vaultwarden.yml
-ansible-playbook playbooks/services/infra/qbittorrent.yml
-ansible-playbook playbooks/services/infra/inpx_web.yml
-ansible-playbook playbooks/services/infra/linkwarden.yml
-ansible-playbook playbooks/services/infra/step_ca.yml
-ansible-playbook playbooks/services/infra/portainer_edge.yml
+# Single services (via tags)
+ansible-playbook playbooks/servers.yml --tags postgres
+ansible-playbook playbooks/servers.yml --tags beszel
+ansible-playbook playbooks/servers.yml --tags portainer
+ansible-playbook playbooks/servers.yml --tags vaultwarden
+ansible-playbook playbooks/servers.yml --tags qbittorrent
+ansible-playbook playbooks/servers.yml --tags inpx_web
+ansible-playbook playbooks/servers.yml --tags linkwarden
+ansible-playbook playbooks/servers.yml --tags step_ca
+ansible-playbook playbooks/servers.yml --tags traefik
 
 # All servers (base + all services)
 ansible-playbook playbooks/servers.yml

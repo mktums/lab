@@ -1,9 +1,0 @@
----
-- name: Deploy qBittorrent
-  hosts: qbittorrent_hosts
-  become: true
-  tags: [qbittorrent]
-  vars_files:
-    - ../../../vault/secrets.yml
-  roles:
-    - role: qbittorrent

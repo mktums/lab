@@ -24,6 +24,7 @@
   community.docker.docker_compose_v2:
     project_src: "{{ postgres_opt_dir }}"
     state: present
+    wait: true
     pull: missing
   notify: Restart postgres
   when: inventory_hostname in groups.get('postgres_hosts', [])

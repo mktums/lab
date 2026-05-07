@@ -11,7 +11,6 @@
 - [ ] Replace docker_container with docker_compose_v2
 - [ ] Handle step_ca trust.yml (docker_container_exec → post-deploy task)
 - [ ] Update handlers
-- [ ] Validate and deploy
 
 ## Motivation
 

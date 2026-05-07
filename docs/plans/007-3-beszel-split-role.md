@@ -4,20 +4,33 @@
 
 [007-migrate-to-docker-compose.md](007-migrate-to-docker-compose.md) — Migrate from `docker_container` to Docker Compose
 
-## Status: ✅ DONE (split) / ⏸️ PENDING (compose)
+## Status: ⏸️ Hub complete, agent partially migrated — 1 bug + 1 task
 
+### Beszel hub ✅ Complete
 - [x] Split into `beszel_hub` + `beszel` roles (done as part of 007-0 restructure)
-- [ ] Create compose template for beszel hub
-- [ ] Create compose template for beszel agent
-- [ ] Create compose template for beszel agent (host network)
-- [ ] Replace docker_container with docker_compose_v2
-- [ ] Add wait-for-hub probe on agent side
-- [ ] Update handlers
-- [ ] Validate and deploy
+- [x] Create compose template (`roles/services/beszel_hub/templates/docker-compose.yml.j2`)
+- [x] Update handler to docker_compose_v2
+- [x] Register CNAME via `include_role: common, tasks_from: register_cname`
+- [x] HUB_URL in agent uses `{{ beszel_hub_cname }}` (not hardcoded)
+
+### Beszel agent ✅ Complete
+- [x] Split agent into separate role (`roles/services/beszel/`)
+- [x] Create compose template (`roles/services/beszel/templates/docker-compose.yml.j2`)
+- [x] Deploy task uses `docker_compose_v2` with correct `beszel_agent_opt_dir`
+- [x] Fix handler variable: `beszel_hub_opt_dir` → `beszel_agent_opt_dir` (007-9)
+
+
+### Compose template content (current):
+- Image: conditional on `nvidia_gpu` flag (`beszel_agent_image_nvidia_name` vs `beszel_agent_image_name`)
+- Volumes: docker.sock (ro), data dir, extra volumes loop
+- Environment: LISTEN 45876, HUB_URL via `{{ beszel_hub_cname }}`, TOKEN, KEY, GPU_COLLECTOR
+- GPU support: `deploy.resources.reservations.devices` with nvidia driver + `cap_add`
+- Labels: `io.beszel.agent: "true"`, `io.beszel.hostname: {{ inventory_hostname }}`
+- **Missing**: wait-for-hub probe, `restart: on-failure` fallback
 
 ## Motivation
 
-Beszel has two parts: hub (monitoring server) and agent (runs on each host, reports to hub). They're in the same role but separate task files (`hub.yml`, `agent.yml`). This batch tests multi-part service migration and validates that compose handles mixed networking (hub on bridge, agent on host network).
+Beszel has two parts: hub (monitoring server) and agent (runs on each host, reports to hub). They're in the same role but separate task files (`hub.yml`, `agent.yml`). This batch tests multi-part service migration.
 
 ## Roles
 
@@ -45,7 +58,7 @@ services:
 
 ### Beszel agent
 
-Uses `network_mode: host`. In compose, this maps to top-level `network_mode` on the service (not `ports`). Agent connects to hub via hostname (`beszel.lan_domain:port`) — resolves through daemon DNS.
+Agent connects to hub via hostname (`beszel.lan_domain:port`) — resolves through daemon DNS.
 
 **Wait-for-hub probe:** Agent starts before hub is ready → connection errors in logs. Add init container that polls hub port:
 
@@ -60,7 +73,6 @@ services:
     depends_on:
       wait-for-hub:
         condition: service_completed_successfully
-    network_mode: host
     environment:
       LISTEN: "45876"
       HUB_URL: "http://beszel.lan_domain:{{ beszel_port }}"
@@ -69,9 +81,7 @@ services:
       DISK_USAGE_CACHE: "{{ beszel_disk_cache }}"
 ```
 
-**Note:** `network_mode: host` on the agent means the wait container also runs with host networking (compose applies it per-service, not globally). Actually — need to verify: does `depends_on` work when one service has `network_mode: host` and another doesn't? The wait container uses default bridge, agent uses host. They're separate services in same project — should be fine, but validate.
-
-Alternative if `depends_on` + mixed networking causes issues: use `restart: on-failure` instead of `unless-stopped` on the agent, letting it retry until hub is up. Less elegant but simpler.
+Alternative if `depends_on` causes issues: use `restart: on-failure` instead of `unless-stopped` on the agent, letting it retry until hub is up. Less elegant but simpler.
 
 ## Per-component specifics
 
@@ -112,9 +122,39 @@ docker ps | grep beszel-agent  # should be running, no repeated restarts
 
 | Risk | Mitigation |
 |------|-----------|
-| `depends_on` + mixed network_mode in same compose project | Test locally; fallback to `restart: on-failure` if issues arise |
+| `depends_on` condition not respected by all Docker versions | Use wait-for-hub probe as fallback; test with `docker compose ps beszel-agent` |
 | Agent loses connection during hub restart | Agent reconnects automatically; transient gap in metrics only |
 | GPU_COLLECTOR conditional breaks template rendering | Keep Jinja2 for env var; test with and without nvidia_gpu flag |
+
+---
+
+## Next Steps — Fix agent bugs before validation
+
+### 1. Fix handler variable (`roles/services/beszel/handlers/main.yml`)
+```yaml
+# Change:
+project_src: "{{ beszel_hub_opt_dir }}"
+# To:
+project_src: "{{ beszel_agent_opt_dir }}"
+```
+
+### 2. Add wait-for-hub probe (optional — only needed if hub + agent deploy simultaneously)
+```yaml
+services:
+  wait-for-hub:
+    image: alpine:3.23
+    restart: "no"
+    command: >
+      sh -c "until nc -z {{ beszel_hub_cname }}.{{ lan_domain }} {{ beszel_port | string }}; do sleep 3; done"
+
+  beszel-agent:
+    depends_on:
+      wait-for-hub:
+        condition: service_completed_successfully
+```
+
+### 3. Consider `restart: on-failure` for agent
+If hub restarts, the agent may temporarily lose connection. Using `restart: on-failure` with a short backoff lets Docker handle reconnection automatically.
 
 ## Rollback
 

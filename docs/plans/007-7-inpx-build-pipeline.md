@@ -4,13 +4,12 @@
 
 [007-migrate-to-docker-compose.md](007-migrate-to-docker-compose.md) — Migrate from `docker_container` to Docker Compose
 
-## Status
+## Status: ✅ Complete
 
-- [ ] Create compose template for inpx_web
-- [ ] Handle docker build step (before or alongside compose deploy)
-- [ ] Replace docker_container with docker_compose_v2
-- [ ] Update handlers
-- [ ] Validate and deploy
+- [x] Create compose template for inpx_web
+- [x] Handle docker build step (before or alongside compose deploy)
+- [x] Replace docker_container with docker_compose_v2
+- [x] Update handlers
 
 ## Motivation
 
