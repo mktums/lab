@@ -5,6 +5,7 @@ linkwarden_image_name: "ghcr.io/linkwarden/linkwarden"
 linkwarden_image_tag: "latest"
 
 # Paths
+linkwarden_opt_dir: "{{ ansible_opt_base }}/linkwarden"
 linkwarden_data_dir: "{{ docker_data_base }}/linkwarden"
 
 # CNAME subdomain (without .{{ lan_domain }})

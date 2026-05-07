@@ -1,0 +1,23 @@
+---
+- name: Create Meilisearch data directory
+  ansible.builtin.file:
+    path: "{{ meilisearch_data_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Render compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ meilisearch_data_dir }}/docker-compose.yml"
+    mode: "0644"
+
+- name: Deploy Meilisearch stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ meilisearch_data_dir }}"
+    files:
+      - docker-compose.yml
+    state: present
+    wait: true
+    wait_timeout: 300
+    pull: missing
+  notify: Restart meilisearch

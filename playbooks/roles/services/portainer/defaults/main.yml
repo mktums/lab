@@ -2,7 +2,7 @@
 
 # Image
 portainer_image_name: "portainer/portainer-ce"
-portainer_image_tag: "latest"
+portainer_image_tag: "2.39.2-alpine"
 
 # Network
 portainer_web_port: 9000

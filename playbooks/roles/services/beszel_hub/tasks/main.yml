@@ -1,12 +1,15 @@
 ---
-- ansible.builtin.include_tasks: hub.yml
-- ansible.builtin.include_tasks: init.yml
-- ansible.builtin.include_tasks: register.yml
+- name: Deploy beszel hub (lab1 only)
+  block:
+    - ansible.builtin.include_tasks: hub.yml
+    - ansible.builtin.include_tasks: init.yml
+    - ansible.builtin.include_tasks: register.yml
 
-- name: Register Beszel CNAME
-  ansible.builtin.include_role:
-    name: common
-    tasks_from: register_cname
-  vars:
-    cname_name: "{{ beszel_hub_cname }}.{{ lan_domain }}"
-    cname_target: "{{ beszel_hub_cname_target | default(inventory_hostname + '.' + lan_domain) }}"
+    - name: Register Beszel CNAME
+      ansible.builtin.include_role:
+        name: common
+        tasks_from: register_cname
+      vars:
+        cname_name: "{{ beszel_hub_cname }}.{{ lan_domain }}"
+        cname_target: "{{ beszel_hub_cname_target | default(inventory_hostname + '.' + lan_domain) }}"
+  when: inventory_hostname in groups.get('beszel_hosts', [])

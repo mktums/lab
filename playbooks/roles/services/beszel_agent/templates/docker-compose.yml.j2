@@ -4,6 +4,9 @@ services:
     image: "{{ beszel_agent_image }}"
     hostname: "{{ inventory_hostname }}"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/agent", "health"]
+      interval: 120s
     volumes:
       - "{{ beszel_data_dir }}:/var/lib/beszel-agent"
       - /var/run/docker.sock:/var/run/docker.sock:ro

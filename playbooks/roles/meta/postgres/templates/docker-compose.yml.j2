@@ -10,8 +10,3 @@ services:
     environment:
       POSTGRES_PASSWORD: "{{ postgres_password }}"
     shm_size: "{{ postgres_shm_size }}"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5

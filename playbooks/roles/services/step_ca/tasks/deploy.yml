@@ -10,7 +10,6 @@
     - { path: "{{ step_ca_data_dir }}", owner: "{{ container_puid }}", mode: "0700" }
     - { path: "{{ step_ca_config_dir }}", owner: "root", mode: "0700" }
     - { path: "{{ step_ca_config_dir }}/secrets", owner: "{{ container_puid }}", mode: "0700" }
-  when: inventory_hostname in groups.get('step_ca_hosts', [])
 
 - name: Write CA password file
   ansible.builtin.copy:
@@ -19,7 +18,6 @@
     owner: "{{ container_puid }}"
     group: "{{ container_pgid }}"
     mode: "0400"
-  when: inventory_hostname in groups.get('step_ca_hosts', [])
 
 - name: Deploy step-ca container
   community.docker.docker_container:
@@ -38,7 +36,6 @@
       DOCKER_STEPCA_INIT_ACME: "true"
       DOCKER_STEPCA_INIT_PASSWORD_FILE: /run/secrets/password
   notify: Restart step-ca
-  when: inventory_hostname in groups.get('step_ca_hosts', [])
 
 - name: Wait for step-ca to be ready
   ansible.builtin.uri:
@@ -49,4 +46,3 @@
   until: _step_ca_health.status == 200
   retries: 15
   delay: 4
-  when: inventory_hostname in groups.get('step_ca_hosts', [])

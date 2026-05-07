@@ -3,6 +3,11 @@ services:
   qbittorrent:
     image: "{{ qbittorrent_image_name }}:{{ qbittorrent_image_tag }}"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --server-response -qO /dev/null http://127.0.0.1:8080/ 2>&1 | grep -q \"HTTP/1.1 200\""]
+      interval: 60s
+      timeout: 5s
+      retries: 3
     ports:
       - "{{ qbittorrent_web_port }}:8080"
       - "{{ qbittorrent_torrent_port }}:6881"
@@ -16,12 +21,6 @@ services:
     volumes:
       - "{{ qbittorrent_data_dir }}:/config"
       - "{{ downloads_dir }}:/downloads"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 60s
     labels:
       traefik.enable: "true"
       traefik.http.routers.qbittorrent.rule: "Host(`{{ qbittorrent_cname }}.{{ inventory_hostname }}.{{ lan_domain }}`)"

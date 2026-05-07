@@ -1,11 +1,12 @@
 ---
-# Create data directory and write .env file, then deploy via compose
-- name: Create Linkwarden data directory
+# Create directories, write .env file, then deploy via compose
+- name: Create Linkwarden dirs
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     mode: "0755"
   loop:
+    - "{{ linkwarden_opt_dir }}"
     - "{{ linkwarden_data_dir }}/data"
 
 - name: Write Linkwarden .env file
@@ -18,19 +19,19 @@
       MEILI_HOST=http://{{ meilisearch_cname }}.{{ lan_domain }}:{{ meilisearch_port }}
       MEILI_MASTER_KEY={{ meilisearch_master_key }}
       STORAGE_FOLDER=/data
-    dest: "{{ linkwarden_data_dir }}/.env"
+    dest: "{{ linkwarden_opt_dir }}/.env"
     mode: "0600"
     backup: true
 
 - name: Render compose file
   ansible.builtin.template:
     src: docker-compose.yml.j2
-    dest: "{{ linkwarden_data_dir }}/docker-compose.yml"
+    dest: "{{ linkwarden_opt_dir }}/docker-compose.yml"
     mode: "0644"
 
 - name: Deploy Linkwarden stack
   community.docker.docker_compose_v2:
-    project_src: "{{ linkwarden_data_dir }}"
+    project_src: "{{ linkwarden_opt_dir }}"
     files:
       - docker-compose.yml
     state: present

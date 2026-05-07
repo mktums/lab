@@ -1,13 +1,13 @@
 ---
-- name: Deploy Postgres stack
-  ansible.builtin.include_tasks: deploy.yml
-  when: inventory_hostname in groups.get('postgres_hosts', [])
+- name: Deploy Postgres (lab1 only)
+  block:
+    - ansible.builtin.include_tasks: deploy.yml
 
-- name: Register Postgres CNAME
-  ansible.builtin.include_role:
-    name: common
-    tasks_from: register_cname
-  vars:
-    cname_name: "{{ postgres_cname }}.{{ lan_domain }}"
-    cname_target: "{{ postgres_cname_target | default(inventory_hostname + '.' + lan_domain) }}"
+    - name: Register Postgres CNAME
+      ansible.builtin.include_role:
+        name: common
+        tasks_from: register_cname
+      vars:
+        cname_name: "{{ postgres_cname }}.{{ lan_domain }}"
+        cname_target: "{{ postgres_cname_target | default(inventory_hostname + '.' + lan_domain) }}"
   when: inventory_hostname in groups.get('postgres_hosts', [])

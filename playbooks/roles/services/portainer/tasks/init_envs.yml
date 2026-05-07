@@ -6,7 +6,7 @@
   block:
     - name: Wait for Portainer API to be ready
       ansible.builtin.uri:
-        url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/status"
+        url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/system/status"
         validate_certs: false
         status_code: 200
       register: _portainer_ready
@@ -81,7 +81,7 @@
 
     - name: Set PublicURL for this environment
       ansible.builtin.uri:
-        url: "https://portainer.{{ lan_domain }}/api/endpoints/{{ _this_env.Id }}"
+        url: "https://{{ portainer_cname }}.{{ lan_domain }}/api/endpoints/{{ _this_env.Id }}"
         method: PUT
         headers:
           Authorization: "Bearer {{ _portainer_auth.json.jwt }}"

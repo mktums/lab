@@ -4,21 +4,18 @@
     path: "{{ postgres_data_dir }}"
     state: directory
     mode: "0700"
-  when: inventory_hostname in groups.get('postgres_hosts', [])
 
 - name: Create opt directory
   ansible.builtin.file:
     path: "{{ postgres_opt_dir }}"
     state: directory
     mode: "0755"
-  when: inventory_hostname in groups.get('postgres_hosts', [])
 
 - name: Render compose file
   ansible.builtin.template:
     src: docker-compose.yml.j2
     dest: "{{ postgres_opt_dir }}/docker-compose.yml"
     mode: "0644"
-  when: inventory_hostname in groups.get('postgres_hosts', [])
 
 - name: Deploy Postgres stack
   community.docker.docker_compose_v2:
@@ -28,4 +25,3 @@
     wait_timeout: 300
     pull: missing
   notify: Restart postgres
-  when: inventory_hostname in groups.get('postgres_hosts', [])

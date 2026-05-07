@@ -6,20 +6,19 @@ services:
     ports:
       - "{{ portainer_web_port }}:9000"
       - "{{ portainer_edge_port }}:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:9000/api/system/status || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - "{{ portainer_data_dir }}/data:/data"
     command: >-
-      --admin-password={{ portainer_admin_password | password_hash('bcrypt', vault_bcrypt_salt) }}
+      --admin-password="{{ (portainer_admin_password | password_hash('bcrypt', vault_bcrypt_salt)) | replace('$', '$$') }}"
       --http-enabled
       --bind=:9000
       --bind-https=
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9000/api/health || exit 1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 60s
     labels:
       traefik.enable: "true"
       traefik.http.routers.portainer.rule: "Host(`{{ portainer_cname }}.{{ lan_domain }}`)"

@@ -1,7 +1,7 @@
 ---
 services:
   portainer-edge-agent:
-    image: "portainer/agent:latest"
+    image: "{{ portainer_edge_image_name }}:{{ portainer_edge_image_tag }}"
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

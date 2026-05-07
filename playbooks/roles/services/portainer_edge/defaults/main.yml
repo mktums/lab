@@ -1,5 +1,9 @@
 # Portainer Edge Agent defaults
 
+# Image
+portainer_edge_image_name: "portainer/agent"
+portainer_edge_image_tag: "2.39.2-alpine"
+
 # Paths
 portainer_edge_opt_dir: "{{ ansible_opt_base }}/portainer-edge"
 portainer_edge_data_dir: "{{ docker_data_base }}/portainer-edge"
