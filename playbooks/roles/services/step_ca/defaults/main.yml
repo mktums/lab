@@ -5,8 +5,8 @@ step_ca_image_name: "smallstep/step-ca"
 step_ca_image_tag: "0.30.1"
 
 # Paths
+step_ca_opt_dir: "{{ ansible_opt_base }}/step-ca"
 step_ca_data_dir: "{{ docker_data_base }}/step-ca"
-step_ca_config_dir: "/opt/step-ca"
 
 # Network
 step_ca_port: 8443

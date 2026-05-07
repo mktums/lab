@@ -8,41 +8,21 @@
     mode: "{{ item.mode }}"
   loop:
     - { path: "{{ step_ca_data_dir }}", owner: "{{ container_puid }}", mode: "0700" }
-    - { path: "{{ step_ca_config_dir }}", owner: "root", mode: "0700" }
-    - { path: "{{ step_ca_config_dir }}/secrets", owner: "{{ container_puid }}", mode: "0700" }
+    - { path: "{{ step_ca_opt_dir }}", owner: "root", mode: "0700" }
 
-- name: Write CA password file
-  ansible.builtin.copy:
-    content: "{{ step_ca_password }}"
-    dest: "{{ step_ca_config_dir }}/secrets/password"
-    owner: "{{ container_puid }}"
-    group: "{{ container_pgid }}"
-    mode: "0400"
-
-- name: Deploy step-ca container
-  community.docker.docker_container:
-    name: step-ca
-    image: "{{ step_ca_image_name }}:{{ step_ca_image_tag }}"
-    pull: missing
-    restart_policy: unless-stopped
-    published_ports:
-      - "{{ step_ca_port }}:9000"
-    volumes:
-      - "{{ step_ca_data_dir }}:/home/step"
-      - "{{ step_ca_config_dir }}/secrets/password:/run/secrets/password:ro"
-    env:
-      DOCKER_STEPCA_INIT_NAME: "{{ step_ca_name }}"
-      DOCKER_STEPCA_INIT_DNS_NAMES: "localhost,{{ step_ca_cname }}.{{ lan_domain }},{{ inventory_hostname }}.{{ lan_domain }}"
-      DOCKER_STEPCA_INIT_ACME: "true"
-      DOCKER_STEPCA_INIT_PASSWORD_FILE: /run/secrets/password
+- name: Render compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ step_ca_opt_dir }}/docker-compose.yml"
+    mode: "0644"
   notify: Restart step-ca
 
-- name: Wait for step-ca to be ready
-  ansible.builtin.uri:
-    url: "https://localhost:{{ step_ca_port }}/health"
-    validate_certs: false
-    status_code: 200
-  register: _step_ca_health
-  until: _step_ca_health.status == 200
-  retries: 15
-  delay: 4
+- name: Deploy step-ca stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ step_ca_opt_dir }}"
+    files:
+      - docker-compose.yml
+    state: present
+    wait: true
+    wait_timeout: 300
+    pull: missing

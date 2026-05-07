@@ -23,7 +23,7 @@ Each file describes a single change or refactoring effort: the motivation, affec
 | 4 | Normal | [Remove `lab_index` — use inventory_hostname directly](004-remove-lab-index.md) | Easy | ✅ Done (2026-05-03) |
 | 5 | Critical | [Kopia backup server + agents (labs, PC, MacBook, Android)](005-kopia-backup.md) | Hard | In review |
 | 6 | Low | [Service docs generator approach TBD](006-docs-generator-approach.md) | — | In review |
-| 7 | High | [Migrate from docker_container to Docker Compose](007-migrate-to-docker-compose.md) | Hard | In review |
+| 7 | High | [Migrate from docker_container to Docker Compose](007-migrate-to-docker-compose.md) | Hard | ✅ Done (2026-05-07) |
 | 8 | Low | [Optimize inpx-web Dockerfile (multi-stage build)](008-optimize-inpx-dockerfile.md) | Medium | In review |
 | 9 | Normal | [Reconsider service playbook independence](009-service-playbook-independence.md) | Easy | ✅ Done (2026-05-05) |
 | 10 | High | [CNAME name/target consistency across roles](010-cname-consistency.md) | Medium | Pending |

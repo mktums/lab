@@ -6,11 +6,13 @@
 
 ## Status
 
-- [ ] Create compose template for step-ca
-- [ ] Create compose template for traefik (host network + wait-for-stepca)
-- [ ] Replace docker_container with docker_compose_v2
-- [ ] Handle step_ca trust.yml (docker_container_exec → post-deploy task)
-- [ ] Update handlers
+✅ Done (2026-05-07)
+
+- [x] Create compose template for step-ca
+- [x] Create compose template for traefik (host network + wait-for-stepca)
+- [x] Replace docker_container with docker_compose_v2
+- [x] Handle step_ca trust.yml (docker_container_exec → post-deploy task)
+- [x] Update handlers
 
 ## Motivation
 
@@ -186,6 +188,12 @@ docker logs traefik | grep -i acme | tail -20
 | `network_mode: host` + wait container on bridge causes compose issues | Tested pattern — services in same project can mix network modes. Wait container uses default bridge (resolves step-ca via daemon DNS), traefik uses host. No conflict. |
 | ACME cert renewal fails after migration | Traefik config is identical (same CLI args, same volumes). Only deployment method changes. Monitor acme.json for new certs after first renewal cycle. |
 | Downtime during migration (step-ca + traefik restart) | ~30-60 seconds per service. All existing services lose HTTPS briefly. Schedule maintenance window. |
+
+## Implementation notes (post-deployment)
+
+- **Wait-for-stepca**: Not implemented as compose service. Servers.yml play order ensures step_ca deploys before traefik via meta dependencies. Wait service unnecessary given Ansible handles ordering.
+- **Step-ca secrets**: Kept in data_dir (`/srv/docker_data/step-ca/secrets/`) — no docker secrets, no bind mount override needed. Original Dockerfile CMD path works as-is.
+- **Trust.yml**: Changed from `docker_container_exec` to `slurp` (reads root CA cert directly from data_dir file system instead of exec into container).
 
 ## Rollback
 

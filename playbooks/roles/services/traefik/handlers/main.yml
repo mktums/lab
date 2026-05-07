@@ -1,7 +1,8 @@
 ---
 - name: Restart Traefik
-  community.docker.docker_container:
-    name: traefik
-    state: started
-    restart: true
+  community.docker.docker_compose_v2:
+    project_src: "{{ traefik_config_dir }}"
+    files:
+      - docker-compose.yml
+    state: present
 

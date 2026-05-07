@@ -1,0 +1,36 @@
+services:
+  traefik:
+    image: "{{ traefik_image_name }}:{{ traefik_image_tag }}"
+    restart: unless-stopped
+    network_mode: host
+    command: >
+      --global.checknewversion=false
+      --global.sendanonymoususage=false
+      --log.level=INFO
+      --api.dashboard=true
+      --entrypoints.web.address=:80
+      --entrypoints.web.http.redirections.entrypoint.to=websecure
+      --entrypoints.web.http.redirections.entrypoint.scheme=https
+      --entrypoints.web.http.redirections.entrypoint.permanent=true
+      --entrypoints.websecure.address=:443
+      --providers.docker.exposedbydefault=false
+      --providers.docker.watch=true
+      --providers.file.filename=/traefik-dynamic.yml
+      --providers.file.watch=true
+      --certificatesresolvers.step-ca.acme.email={{ traefik_acme_email }}
+      --certificatesresolvers.step-ca.acme.storage=/acme/acme.json
+      --certificatesresolvers.step-ca.acme.caserver=https://step-ca.{{ lan_domain }}:{{ step_ca_port }}/acme/acme/directory
+      --certificatesresolvers.step-ca.acme.tlschallenge=true
+      --ping.entryPoint=web
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/ping | grep -q OK || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - "{{ traefik_config_dir }}/traefik-dynamic.yml:/traefik-dynamic.yml:ro"
+      - "{{ traefik_data_dir }}/acme:/acme"
+      - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
+    labels:
+      traefik.enable: "false"

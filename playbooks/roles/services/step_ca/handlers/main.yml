@@ -1,7 +1,6 @@
 ---
 - name: Restart step-ca
-  community.docker.docker_container:
-    name: step-ca
-    state: started
-    restart: true
+  community.docker.docker_compose_v2:
+    project_src: "{{ step_ca_opt_dir }}"
+    state: present
 

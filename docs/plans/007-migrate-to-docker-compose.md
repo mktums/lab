@@ -10,7 +10,7 @@
 | [007-3-beszel-split-role.md](007-3-beszel-split-role.md) | beszel hub + agent | ✅ Done (2026-05-07) |
 | [007-4-meilisearch-meta.md](007-4-meilisearch-meta.md) | meilisearch meta-service | ✅ Done (2026-05-07) |
 | [007-5-linkwarden-app.md](007-5-linkwarden-app.md) | linkwarden app + db-init container | ✅ Done (2026-05-07) |
-| [007-6-core-infra-order.md](007-6-core-infra-order.md) | step_ca + traefik (order-critical) | Pending |
+| [007-6-core-infra-order.md](007-6-core-infra-order.md) | step_ca + traefik (order-critical) | ✅ Done (2026-05-07) |
 | [007-7-inpx-build-pipeline.md](007-7-inpx-build-pipeline.md) | inpx_web (custom build) | ✅ Done (2026-05-07) |
 | [007-8-service-healthchecks.md](007-8-service-healthchecks.md) | audit + create healthchecks for all services | ✅ Done (2026-05-07) |
 

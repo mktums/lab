@@ -1,0 +1,12 @@
+services:
+  step-ca:
+    image: "{{ step_ca_image_name }}:{{ step_ca_image_tag }}"
+    restart: unless-stopped
+    ports:
+      - "{{ step_ca_port }}:9000"
+    environment:
+      DOCKER_STEPCA_INIT_NAME: "{{ step_ca_name }}"
+      DOCKER_STEPCA_INIT_DNS_NAMES: "localhost,{{ step_ca_cname }}.{{ lan_domain }},{{ inventory_hostname }}.{{ lan_domain }}"
+      DOCKER_STEPCA_INIT_ACME: "true"
+    volumes:
+      - "{{ step_ca_data_dir }}:/home/step"
