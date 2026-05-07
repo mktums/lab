@@ -1,0 +1,5 @@
+# Portainer Edge Agent defaults
+
+# Paths
+portainer_edge_opt_dir: "{{ ansible_opt_base }}/portainer-edge"
+portainer_edge_data_dir: "{{ docker_data_base }}/portainer-edge"

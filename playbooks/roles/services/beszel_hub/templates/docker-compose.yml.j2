@@ -8,12 +8,12 @@ services:
     volumes:
       - "{{ beszel_data_dir }}/data:/beszel_data"
     environment:
-      APP_URL: "https://{{ beszel_cname }}.{{ lan_domain }}"
+      APP_URL: "https://{{ beszel_hub_cname }}.{{ lan_domain }}"
       USER_EMAIL: "{{ beszel_admin_email }}"
       USER_PASSWORD: "{{ beszel_admin_password }}"
     labels:
       traefik.enable: "true"
-      traefik.http.routers.beszel.rule: "Host(`{{ beszel_cname }}.{{ lan_domain }}`)"
+      traefik.http.routers.beszel.rule: "Host(`{{ beszel_hub_cname }}.{{ lan_domain }}`)"
       traefik.http.routers.beszel.entrypoints: "websecure"
       traefik.http.routers.beszel.tls: "true"
       traefik.http.routers.beszel.tls.certresolver: "step-ca"

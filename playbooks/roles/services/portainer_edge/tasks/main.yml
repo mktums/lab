@@ -6,21 +6,29 @@
   ansible.builtin.command: update-ca-certificates
   changed_when: false
 
-- name: Deploy Portainer Edge Agent container
-  community.docker.docker_container:
-    name: portainer_edge_agent
-    image: portainer/agent:latest
+# Deploy only if edge key is available (set during registration)
+- name: Create Portainer Edge directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ portainer_edge_opt_dir }}"
+    - "{{ portainer_edge_data_dir }}"
+  when: portainer_edge_key is defined and portainer_edge_key | length > 0
+
+- name: Render Portainer Edge compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ portainer_edge_opt_dir }}/docker-compose.yml"
+    mode: "0644"
+  when: portainer_edge_key is defined and portainer_edge_key | length > 0
+
+- name: Deploy Portainer Edge Agent stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ portainer_edge_opt_dir }}"
+    files:
+      - docker-compose.yml
+    state: present
     pull: missing
-    restart_policy: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /var/lib/docker/volumes:/var/lib/docker/volumes
-      - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
-      - /:/host
-    env:
-      EDGE: "1"
-      EDGE_ID: "{{ portainer_edge_id | string }}"
-      EDGE_KEY: "{{ portainer_edge_key }}"
-      # EDGE_INSECURE_POLL: "1"  # Uncomment if agent fails to trust step-ca cert (requires step-ca CA in agent container trust store)
-      AGENT_CLUSTER_ADDR: ""
   when: portainer_edge_key is defined and portainer_edge_key | length > 0

@@ -12,4 +12,4 @@ beszel_data_dir: "{{ docker_data_base }}/beszel"
 beszel_port: 8090
 
 # CNAME subdomain (without .{{ lan_domain }})
-beszel_cname: "beszel"
+beszel_hub_cname: "beszel"

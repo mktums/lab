@@ -1,6 +1,43 @@
 ---
-- ansible.builtin.include_tasks: db_init.yml
-- ansible.builtin.include_tasks: deploy.yml
+# Create data directory and write .env file, then deploy via compose
+- name: Create Linkwarden data directory
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ linkwarden_data_dir }}/data"
+
+- name: Write Linkwarden .env file
+  ansible.builtin.copy:
+    content: |
+      NEXTAUTH_SECRET={{ linkwarden_nextauth_secret }}
+      NEXTAUTH_URL=https://{{ linkwarden_cname }}.{{ lan_domain }}/api/v1/auth
+      BASE_URL=https://{{ linkwarden_cname }}.{{ lan_domain }}
+      DATABASE_URL=postgresql://linkwarden:{{ linkwarden_db_password }}@{{ postgres_cname }}.{{ lan_domain }}:{{ postgres_port }}/linkwarden
+      MEILI_HOST=http://{{ meilisearch_cname }}.{{ lan_domain }}:{{ meilisearch_port }}
+      MEILI_MASTER_KEY={{ meilisearch_master_key }}
+      STORAGE_FOLDER=/data
+    dest: "{{ linkwarden_data_dir }}/.env"
+    mode: "0600"
+    backup: true
+
+- name: Render compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ linkwarden_data_dir }}/docker-compose.yml"
+    mode: "0644"
+
+- name: Deploy Linkwarden stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ linkwarden_data_dir }}"
+    files:
+      - docker-compose.yml
+    state: present
+    pull: missing
+  notify: Restart linkwarden
+
+# Register CNAME after deployment (DNS must exist before traefik routes)
 - name: Register Linkwarden CNAME
   ansible.builtin.include_role:
     name: common

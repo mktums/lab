@@ -10,9 +10,11 @@ beszel_agent_image_nvidia_tag: "latest"
 beszel_agent_opt_dir: "{{ ansible_opt_base }}/beszel-agent"
 beszel_data_dir: "{{ docker_data_base }}/beszel-agent"
 
+# CNAME subdomain (without .{{ lan_domain }})
+beszel_agent_cname: "beszel"
+
 # Network (hub connection)
 beszel_port: 8090
-beszel_cname: "beszel"
 
 # Agent settings
 beszel_disk_cache: "1h"

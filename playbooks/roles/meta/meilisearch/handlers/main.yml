@@ -1,6 +1,7 @@
 ---
 - name: Restart meilisearch
-  community.docker.docker_container:
-    name: meilisearch
-    state: started
-    restart: true
+  community.docker.docker_compose_v2:
+    project_src: "{{ meilisearch_data_dir }}"
+    files:
+      - docker-compose.yml
+    state: present

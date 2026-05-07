@@ -1,0 +1,12 @@
+---
+services:
+  meilisearch:
+    image: "{{ meilisearch_image_name }}:{{ meilisearch_image_tag }}"
+    restart: unless-stopped
+    ports:
+      - "{{ meilisearch_port }}:7700"
+    volumes:
+      - "{{ meilisearch_data_dir }}/meilisearch:/meili_data"
+    environment:
+      MEILI_MASTER_KEY: "{{ meilisearch_master_key }}"
+      MEILI_NO_ANALYTICS: "true"

@@ -1,6 +1,7 @@
 ---
 - name: Restart linkwarden
-  community.docker.docker_container:
-    name: linkwarden
-    state: started
-    restart: true
+  community.docker.docker_compose_v2:
+    project_src: "{{ linkwarden_data_dir }}"
+    files:
+      - docker-compose.yml
+    state: present

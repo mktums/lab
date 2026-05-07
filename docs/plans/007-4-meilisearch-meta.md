@@ -4,12 +4,12 @@
 
 [007-migrate-to-docker-compose.md](007-migrate-to-docker-compose.md) — Migrate from `docker_container` to Docker Compose
 
-## Status
+## Status: ✅ Done (2026-05-07)
 
-- [ ] Create compose template for meilisearch
-- [ ] Replace docker_container with docker_compose_v2
-- [ ] Update handlers
-- [ ] Validate and deploy
+All tasks completed:
+- Compose template created at `templates/docker-compose.yml.j2`
+- Deploy task replaced with compose render + docker_compose_v2
+- Handler updated to use docker_compose_v2 with explicit `files:`
 
 ## Motivation
 

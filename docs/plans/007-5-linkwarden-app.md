@@ -4,15 +4,15 @@
 
 [007-migrate-to-docker-compose.md](007-migrate-to-docker-compose.md) — Migrate from `docker_container` to Docker Compose
 
-## Status
+## Status: ✅ Done (2026-05-07)
 
-- [ ] Create compose template for linkwarden app (single container)
-- [ ] Add wait-for-postgres probe
-- [ ] Add wait-for-meilisearch probe
-- [ ] Convert docker_container_exec db_init to entrypoint or init container
-- [ ] Remove custom Docker network tasks
-- [ ] Update handlers
-- [ ] Validate and deploy
+All tasks completed:
+- Compose template created with wait-for probes + db-init container
+- `wait-for-postgres`: Alpine/nc polling `db.lan_domain:5432`
+- `wait-for-meilisearch`: Alpine/nc polling `meili.lan_domain:7700`
+- `db-init`: Uses postgres image to create user+DB idempotently
+- Old deploy.yml + db_init.yml removed (consolidated into main.yml)
+- Handler updated to use docker_compose_v2 with explicit `files:`
 
 ## Motivation
 

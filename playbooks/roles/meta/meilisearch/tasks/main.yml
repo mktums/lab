@@ -4,18 +4,31 @@
     path: "{{ meilisearch_data_dir }}"
     state: directory
     mode: "0755"
+  when: inventory_hostname in groups.get('linkwarden_hosts', [])
 
-- name: Deploy Meilisearch container
-  community.docker.docker_container:
-    name: meilisearch
-    image: "{{ meilisearch_image_name }}:{{ meilisearch_image_tag }}"
+- name: Render compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ meilisearch_data_dir }}/docker-compose.yml"
+    mode: "0644"
+  when: inventory_hostname in groups.get('linkwarden_hosts', [])
+
+- name: Deploy Meilisearch stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ meilisearch_data_dir }}"
+    files:
+      - docker-compose.yml
+    state: present
     pull: missing
-    restart_policy: unless-stopped
-    published_ports:
-      - "{{ meilisearch_port }}:7700"
-    volumes:
-      - "{{ meilisearch_data_dir }}/meilisearch:/meili_data"
-    env:
-      MEILI_MASTER_KEY: "{{ meilisearch_master_key }}"
-      MEILI_NO_ANALYTICS: "true"
   notify: Restart meilisearch
+  when: inventory_hostname in groups.get('linkwarden_hosts', [])
+
+# Register CNAME after deployment (DNS must exist before services reference it)
+- name: Register Meilisearch CNAME
+  ansible.builtin.include_role:
+    name: common
+    tasks_from: register_cname
+  vars:
+    cname_name: "{{ meilisearch_cname }}.{{ lan_domain }}"
+    cname_target: "{{ inventory_hostname + '.' + lan_domain }}"
+  when: inventory_hostname in groups.get('linkwarden_hosts', [])

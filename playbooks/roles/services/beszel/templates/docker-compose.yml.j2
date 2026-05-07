@@ -12,7 +12,7 @@ services:
 {% endfor %}
     environment:
       LISTEN: "45876"
-      HUB_URL: "http://{{ beszel_cname }}.{{ lan_domain }}:{{ beszel_port | string }}"
+      HUB_URL: "http://{{ beszel_hub_cname }}.{{ lan_domain }}:{{ beszel_port | string }}"
       TOKEN: "{{ beszel_token }}"
       KEY: "{{ beszel_hub_key }}"
 {% if beszel_agent_gpu_collector == 'true' %}

@@ -20,3 +20,4 @@
     state: present
     pull: missing
   notify: Restart Vaultwarden
+

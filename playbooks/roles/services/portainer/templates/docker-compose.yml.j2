@@ -1,0 +1,23 @@
+---
+services:
+  portainer:
+    image: "{{ portainer_image_name }}:{{ portainer_image_tag }}"
+    restart: unless-stopped
+    ports:
+      - "{{ portainer_web_port }}:9000"
+      - "{{ portainer_edge_port }}:8000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - "{{ portainer_data_dir }}/data:/data"
+    command: >-
+      --admin-password={{ portainer_admin_password | password_hash('bcrypt', vault_bcrypt_salt) }}
+      --http-enabled
+      --bind=:9000
+      --bind-https=
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.portainer.rule: "Host(`{{ portainer_cname }}.{{ lan_domain }}`)"
+      traefik.http.routers.portainer.entrypoints: "websecure"
+      traefik.http.routers.portainer.tls: "true"
+      traefik.http.routers.portainer.tls.certresolver: "step-ca"
+      traefik.http.services.portainer.loadbalancer.server.port: "{{ portainer_web_port }}"

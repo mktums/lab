@@ -57,6 +57,9 @@ ansible_opt_base: "/opt/ansible"
 
 docker_data_base: "/srv/docker_data"
 
+# Base images
+alpine_image_tag: "3.23"
+
 # Shared downloads directory (override per-host if needed)
 downloads_dir: "/data/downloads"
 
@@ -83,11 +86,10 @@ qbittorrent_password: "{{ vault_qbittorrent_password }}"
 postgres_password: "{{ vault_postgres_password }}"
 
 # Meilisearch
-meilisearch_master_key: "{{ vault_linkwarden_meili_master_key }}"
+meilisearch_master_key: "{{ vault_meilisearch_master_key }}"
 
 # Linkwarden
 linkwarden_nextauth_secret: "{{ vault_linkwarden_nextauth_secret }}"
-linkwarden_meili_master_key: "{{ vault_linkwarden_meili_master_key }}"
 linkwarden_db_password: "{{ vault_linkwarden_db_password }}"
 
 # Beszel

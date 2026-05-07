@@ -1,6 +1,8 @@
 ---
 - name: Restart Portainer
-  community.docker.docker_container:
-    name: portainer
-    state: started
-    restart: true
+  community.docker.docker_compose_v2:
+    project_src: "{{ portainer_opt_dir }}"
+    files:
+      - docker-compose.yml
+    state: present
+    pull: missing

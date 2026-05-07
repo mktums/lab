@@ -1,2 +1,8 @@
 ---
-
+- name: Restart Portainer Edge Agent
+  community.docker.docker_compose_v2:
+    project_src: "{{ portainer_edge_opt_dir }}"
+    files:
+      - docker-compose.yml
+    state: present
+    pull: missing
