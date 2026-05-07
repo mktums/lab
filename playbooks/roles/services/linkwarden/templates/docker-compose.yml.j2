@@ -45,10 +45,10 @@ services:
       retries: 5
       start_period: 60s
     depends_on:
-      postgres:
-        condition: service_healthy
-      meilisearch:
-        condition: service_healthy
+      wait-for-postgres:
+        condition: service_completed_successfully
+      wait-for-meilisearch:
+        condition: service_completed_successfully
 {% if linkwarden_db_init | default(true) %}
       db-init:
         condition: service_completed_successfully
