@@ -52,7 +52,9 @@ common_packages:
   - pciutils
   - lshw
 
-# Base directory for all Docker service bind mounts
+# Base directories
+ansible_opt_base: "/opt/ansible"
+
 docker_data_base: "/srv/docker_data"
 
 # Shared downloads directory (override per-host if needed)

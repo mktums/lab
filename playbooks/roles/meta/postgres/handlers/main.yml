@@ -1,6 +1,7 @@
 ---
 - name: Restart postgres
-  community.docker.docker_container:
-    name: postgres
-    state: started
-    restart: true
+  community.docker.docker_compose_v2:
+    project_src: "{{ postgres_opt_dir }}"
+    files:
+      - docker-compose.yml
+    state: present

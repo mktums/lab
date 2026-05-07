@@ -1,0 +1,25 @@
+---
+services:
+  qbittorrent:
+    image: "{{ qbittorrent_image_name }}:{{ qbittorrent_image_tag }}"
+    restart: unless-stopped
+    ports:
+      - "{{ qbittorrent_web_port }}:8080"
+      - "{{ qbittorrent_torrent_port }}:6881"
+      - "{{ qbittorrent_torrent_port }}:6881/udp"
+    environment:
+      PUID: "{{ container_puid | string }}"
+      PGID: "{{ container_pgid | string }}"
+      TZ: "{{ timezone }}"
+      WEBUI_PORT: "{{ qbittorrent_web_port | string }}"
+      TORRENTING_PORT: "{{ qbittorrent_torrent_port | string }}"
+    volumes:
+      - "{{ qbittorrent_data_dir }}:/config"
+      - "{{ downloads_dir }}:/downloads"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.qbittorrent.rule: "Host(`{{ qbittorrent_cname }}.{{ inventory_hostname }}.{{ lan_domain }}`)"
+      traefik.http.routers.qbittorrent.entrypoints: "websecure"
+      traefik.http.routers.qbittorrent.tls: "true"
+      traefik.http.routers.qbittorrent.tls.certresolver: "step-ca"
+      traefik.http.services.qbittorrent.loadbalancer.server.port: "{{ qbittorrent_web_port }}"

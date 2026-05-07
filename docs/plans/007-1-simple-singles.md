@@ -4,12 +4,12 @@
 
 [007-migrate-to-docker-compose.md](007-migrate-to-docker-compose.md) — Migrate from `docker_container` to Docker Compose
 
-## Status
+## Status: ✅ Done (2026-05-06)
 
-- [ ] Create compose templates
-- [ ] Replace docker_container with docker_compose_v2
-- [ ] Update handlers
-- [ ] Validate and deploy
+All three roles migrated to Docker Compose:
+- postgres → `templates/docker-compose.yml.j2` + `docker_compose_v2`
+- vaultwarden → same pattern with traefik labels
+- qbittorrent → same pattern + post-deploy password setup preserved
 
 ## Motivation
 

@@ -10,42 +10,42 @@
     - "{{ qbittorrent_data_dir }}"
     - "{{ downloads_dir }}"
 
-- name: Deploy qBittorrent container
-  community.docker.docker_container:
-    name: qbittorrent
-    image: "{{ qbittorrent_image_name }}:{{ qbittorrent_image_tag }}"
+- name: Remove stale IPC/lock files from qBittorrent config
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ qbittorrent_data_dir }}/qBittorrent/ipc-socket"
+    - "{{ qbittorrent_data_dir }}/qBittorrent/lockfile"
+
+- name: Create opt directory
+  ansible.builtin.file:
+    path: "{{ qbittorrent_opt_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Render compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ qbittorrent_opt_dir }}/docker-compose.yml"
+    mode: "0644"
+
+- name: Deploy qBittorrent stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ qbittorrent_opt_dir }}"
+    state: present
     pull: missing
-    restart_policy: unless-stopped
-    published_ports:
-      - "127.0.0.1:{{ qbittorrent_web_port }}:8080"
-      - "{{ qbittorrent_torrent_port }}:6881"
-      - "{{ qbittorrent_torrent_port }}:6881/udp"
-    env:
-      PUID: "{{ container_puid | string }}"
-      PGID: "{{ container_pgid | string }}"
-      TZ: "{{ timezone }}"
-      WEBUI_PORT: "{{ qbittorrent_web_port | string }}"
-      TORRENTING_PORT: "{{ qbittorrent_torrent_port | string }}"
-    volumes:
-      - "{{ qbittorrent_data_dir }}:/config"
-      - "{{ downloads_dir }}:/downloads"
-    labels:
-      traefik.enable: "true"
-      traefik.http.routers.qbittorrent.rule: "Host(`{{ qbittorrent_cname }}.{{ inventory_hostname }}.{{ lan_domain }}`)"
-      traefik.http.routers.qbittorrent.entrypoints: "websecure"
-      traefik.http.routers.qbittorrent.tls: "true"
-      traefik.http.routers.qbittorrent.tls.certresolver: "step-ca"
-      traefik.http.services.qbittorrent.loadbalancer.server.port: "{{ qbittorrent_web_port }}"
+    wait: true
+    wait_timeout: 180
   notify: Restart qBittorrent
 
 - name: Wait for qBittorrent WebUI to be ready
-  ansible.builtin.uri:
-    url: "http://localhost:{{ qbittorrent_web_port }}"
-    status_code: 200
+  ansible.builtin.command:
+    cmd: "docker compose -f {{ qbittorrent_opt_dir }}/docker-compose.yml exec qbittorrent curl -sf http://localhost:8080/"
   register: _qbit_ready
-  until: _qbit_ready.status == 200
   retries: 15
   delay: 4
+  changed_when: false
 
 - name: Check if desired password already works
   ansible.builtin.uri:
@@ -62,7 +62,8 @@
   failed_when: false
 
 - name: Get temporary password from container logs
-  ansible.builtin.command: docker logs qbittorrent
+  ansible.builtin.command:
+    cmd: "docker compose -f {{ qbittorrent_opt_dir }}/docker-compose.yml logs qbittorrent"
   register: _qbit_logs
   changed_when: false
   when:
@@ -71,7 +72,7 @@
 
 - name: Extract temporary password
   ansible.builtin.set_fact:
-    _qbit_temp_pass: "{{ _qbit_logs.stdout | regex_search('temporary password.*: (\\S+)', '\\1') | first | default('') }}"
+    _qbit_temp_pass: "{{ (_qbit_logs.stdout | default('')) | regex_findall('temporary password.*: (\\S+)') | first | default('') }}"
   when: _qbit_logs is not skipped
 
 - name: Login with temporary password

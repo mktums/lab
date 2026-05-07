@@ -1,0 +1,17 @@
+---
+services:
+  postgres:
+    image: "{{ postgres_image_name }}:{{ postgres_image_tag }}"
+    restart: unless-stopped
+    ports:
+      - "{{ postgres_port }}:5432"
+    volumes:
+      - "{{ postgres_data_dir }}:/var/lib/postgresql/data"
+    environment:
+      POSTGRES_PASSWORD: "{{ postgres_password }}"
+    shm_size: "{{ postgres_shm_size }}"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

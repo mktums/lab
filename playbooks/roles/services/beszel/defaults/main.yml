@@ -7,6 +7,7 @@ beszel_agent_image_nvidia_name: "henrygd/beszel-agent-nvidia"
 beszel_agent_image_nvidia_tag: "latest"
 
 # Paths
+beszel_agent_opt_dir: "{{ ansible_opt_base }}/beszel-agent"
 beszel_data_dir: "{{ docker_data_base }}/beszel-agent"
 
 # Network (hub connection)

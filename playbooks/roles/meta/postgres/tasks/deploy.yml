@@ -5,17 +5,21 @@
     state: directory
     mode: "0700"
 
-- name: Deploy Postgres container
-  community.docker.docker_container:
-    name: postgres
-    image: "{{ postgres_image_name }}:{{ postgres_image_tag }}"
+- name: Create opt directory
+  ansible.builtin.file:
+    path: "{{ postgres_opt_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Render compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ postgres_opt_dir }}/docker-compose.yml"
+    mode: "0644"
+
+- name: Deploy Postgres stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ postgres_opt_dir }}"
+    state: present
     pull: missing
-    restart_policy: unless-stopped
-    published_ports:
-      - "{{ postgres_port }}:5432"
-    volumes:
-      - "{{ postgres_data_dir }}:/var/lib/postgresql/data"
-    env:
-      POSTGRES_PASSWORD: "{{ postgres_password }}"
-    shm_size: "{{ postgres_shm_size }}"
   notify: Restart postgres

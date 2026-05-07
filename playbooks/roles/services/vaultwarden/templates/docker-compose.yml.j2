@@ -1,0 +1,19 @@
+---
+services:
+  vaultwarden:
+    image: "{{ vaultwarden_image_name }}:{{ vaultwarden_image_tag }}"
+    restart: unless-stopped
+    volumes:
+      - "{{ vaultwarden_data_dir }}:/data"
+    environment:
+      DOMAIN: "https://{{ vaultwarden_cname }}.{{ lan_domain }}"
+      ADMIN_TOKEN: "{{ vaultwarden_admin_token }}"
+      SIGNUPS_ALLOWED: "true"
+      LOG_LEVEL: "warn"
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.vaultwarden.rule: "Host(`{{ vaultwarden_cname }}.{{ lan_domain }}`)"
+      traefik.http.routers.vaultwarden.entrypoints: "websecure"
+      traefik.http.routers.vaultwarden.tls: "true"
+      traefik.http.routers.vaultwarden.tls.certresolver: "step-ca"
+      traefik.http.services.vaultwarden.loadbalancer.server.port: "80"

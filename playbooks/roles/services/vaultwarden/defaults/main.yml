@@ -5,6 +5,7 @@ vaultwarden_image_name: "vaultwarden/server"
 vaultwarden_image_tag: "latest"
 
 # Paths
+vaultwarden_opt_dir: "{{ ansible_opt_base }}/vaultwarden"
 vaultwarden_data_dir: "{{ docker_data_base }}/vaultwarden"
 
 # CNAME subdomain (without .{{ lan_domain }})

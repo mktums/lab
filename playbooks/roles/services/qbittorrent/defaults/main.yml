@@ -5,6 +5,7 @@ qbittorrent_image_name: "lscr.io/linuxserver/qbittorrent"
 qbittorrent_image_tag: "libtorrentv1"
 
 # Paths
+qbittorrent_opt_dir: "{{ ansible_opt_base }}/qbittorrent"
 qbittorrent_data_dir: "{{ docker_data_base }}/qbittorrent"
 
 # Network

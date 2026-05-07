@@ -1,0 +1,40 @@
+---
+services:
+  beszel-agent:
+    image: "{{ beszel_agent_image }}"
+    hostname: "{{ inventory_hostname }}"
+    restart: unless-stopped
+    volumes:
+      - "{{ beszel_data_dir }}:/var/lib/beszel-agent"
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+{% for vol in beszel_extra_volumes | default([]) %}
+      - "{{ vol }}"
+{% endfor %}
+    environment:
+      LISTEN: "45876"
+      HUB_URL: "http://{{ beszel_cname }}.{{ lan_domain }}:{{ beszel_port | string }}"
+      TOKEN: "{{ beszel_token }}"
+      KEY: "{{ beszel_hub_key }}"
+{% if beszel_agent_gpu_collector == 'true' %}
+      GPU_COLLECTOR: "nvml"
+{% endif %}
+{% if beszel_agent_cap_add | default([]) | length > 0 %}    cap_add:
+{% for cap in beszel_agent_cap_add %}
+      - "{{ cap }}"
+{% endfor %}{% endif %}{% if nvidia_gpu | default(false) %}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+{% else %}{% if beszel_agent_devices | default([]) | length > 0 %}
+    devices:
+{% for dev in beszel_agent_devices %}
+      - "{{ dev }}"
+{% endfor %}
+{% endif %}{% endif %}
+    labels:
+      io.beszel.agent: "true"
+      io.beszel.hostname: "{{ inventory_hostname }}"

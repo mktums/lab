@@ -5,9 +5,9 @@
 | File | Description | Status |
 |------|-------------|--------|
 | [007-0-restructure-directories.md](007-0-restructure-directories.md) | Directory reorg + meilisearch extraction | ✅ Done (2026-05-05) |
-| [007-1-simple-singles.md](007-1-simple-singles.md) | postgres, vaultwarden, qbittorrent | Pending |
+| [007-1-simple-singles.md](007-1-simple-singles.md) | postgres, vaultwarden, qbittorrent | ✅ Done (2026-05-06) |
 | [007-2-portainer-stacks.md](007-2-portainer-stacks.md) | portainer + portainer_edge | Pending |
-| [007-3-beszel-split-role.md](007-3-beszel-split-role.md) | beszel hub + agent | Pending |
+| [007-3-beszel-split-role.md](007-3-beszel-split-role.md) | beszel hub + agent | ✅ Done (2026-05-07)
 | [007-4-meilisearch-meta.md](007-4-meilisearch-meta.md) | meilisearch meta-service | Pending |
 | [007-5-linkwarden-app.md](007-5-linkwarden-app.md) | linkwarden (app only, meta deps) | Pending |
 | [007-6-core-infra-order.md](007-6-core-infra-order.md) | step_ca + traefik (order-critical) | Pending |
