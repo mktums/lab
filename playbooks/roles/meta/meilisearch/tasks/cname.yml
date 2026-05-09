@@ -1,0 +1,8 @@
+---
+# Register CNAME after deployment (DNS must exist before services reference it)
+- name: Register Meilisearch CNAME
+  ansible.builtin.include_role:
+    name: common
+    tasks_from: register_cname
+  vars:
+    cname_name: "{{ meilisearch_cname }}.{{ lan_domain }}"

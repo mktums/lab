@@ -2,13 +2,6 @@
 - name: Deploy Meilisearch (lab1 only)
   block:
     - ansible.builtin.include_tasks: deploy.yml
-
     # Register CNAME after deployment (DNS must exist before services reference it)
-    - name: Register Meilisearch CNAME
-      ansible.builtin.include_role:
-        name: common
-        tasks_from: register_cname
-      vars:
-        cname_name: "{{ meilisearch_cname }}.{{ lan_domain }}"
-        cname_target: "{{ inventory_hostname + '.' + lan_domain }}"
-  when: inventory_hostname in groups.get('linkwarden_hosts', [])
+    - ansible.builtin.include_tasks: cname.yml
+  when: inventory_hostname in groups.get('meilisearch_hosts', [])

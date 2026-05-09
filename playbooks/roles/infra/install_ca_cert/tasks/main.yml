@@ -4,7 +4,7 @@
 
 - name: Fetch root CA certificate from step-ca API (run once)
   ansible.builtin.uri:
-    url: "https://step-ca.{{ lan_domain }}:8443/roots.pem"
+    url: "https://{{ step_ca_cname }}.{{ lan_domain }}:8443/roots.pem"
     return_content: true
     validate_certs: false
   register: _root_cert_response

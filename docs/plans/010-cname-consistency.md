@@ -40,46 +40,38 @@ The step-ca outage we hit today (CNAME overwritten to lab2) is a direct conseque
 | linkwarden .env (fixed) | `db.lan_domain`, `meili.lan_domain` | ✅ Now uses dep vars |
 | beszel agent HUB_URL (fixed) | `beszel_cname` → own cname | ✅ Now uses `{{ beszel_hub_cname }}` |
 
-## Issues to fix
+## Status: ✅ DONE (2026-05-09)
 
-### 1. Add missing CNAME registration tasks
-Services with `*_cname` var but no `register_cname` call:
-- vaultwarden
-- qbittorrent
-- beszel_hub
-- beszel_agent (if agent has its own DNS name)
-- traefik
-- portainer
-- inpx_web
+Issues #1 and #4 were already resolved during plan #007 (docker-compose migration). This plan addressed the remaining gaps.
 
-### 2. Standardize CNAME registration pattern
-All roles should register their CNAME after deploy:
-```yaml
-- name: Register <service> CNAME
-  ansible.builtin.include_role:
-    name: common
-    tasks_from: register_cname
-  vars:
-    cname_name: "{{ <role>_cname }}.{{ lan_domain }}"
-    cname_target: "{{ <role>_cname_target | default(inventory_hostname + '.' + lan_domain) }}"
-```
+### Changes applied
 
-### 3. Add `*_cname_target` override support for multi-host services
-Some services may need to point to a specific host (not the current inventory host):
-- `traefik_cname_target: "{{ groups['servers'][0] + '.' + lan_domain }}"` for HA setups
-- Default should be `inventory_hostname`
+| Change | Detail |
+|---|---|
+| `install_ca_cert` hardcoded hostname | Uses `{{ step_ca_cname }}` instead of literal `step-ca` — survives CNAME renames |
+| Unused `*_cname_target` overrides removed | All 10 roles simplified to bare default (`inventory_hostname + '.' + lan_domain`) handled by `register_cname.yml` itself — no role-level override needed in this homelab |
+| CNAME registration extracted to `tasks/cname.yml` | Every role with a `_cname` var now imports a dedicated task file instead of inlining the call in `main.yml` — keeps main tasks focused on deployment logic |
+| `meilisearch_hosts` group created | Meilisearch guard changed from `linkwarden_hosts` → own `meilisearch_hosts` group (`lab1`) — decouples dependency targeting for future flexibility |
 
-### 4. Audit all dependent roles for hardcoded DNS names
-Cross-check every role's meta dependencies and templates for hardcoded `.lan_domain` references that should use dep vars instead.
+### Final state (audit)
 
-## Implementation steps
+**Roles with CNAME registration:** 10/10 ✅
 
-1. **Audit** — scan all compose templates + .env files for hardcoded DNS names (grep `\.{{ lan_domain }}`)
-2. **Add registration** — add CNAME register task to every role with a `*_cname` var
-3. **Fix cross-references** — update any remaining hardcoded references in dependent roles
-4. **Document convention** — add to AGENTS.md: "All services MUST define `<role>_cname` and register it after deploy"
+| Role | cname_name | Guard | File |
+|------|-----------|-------|-----|
+| beszel_hub | `beszel.lan` | `beszel_hosts` | `tasks/cname.yml` |
+| inpx_web | `lib.lan` | — (inventory) | `tasks/cname.yml` |
+| linkwarden | `links.lan` | — (inventory) | `tasks/cname.yml` |
+| portainer | `portainer.lan` | — (inventory) | `tasks/cname.yml` |
+| qbittorrent | `qbit.<host>.lan` | — (inventory) | `tasks/cname.yml` |
+| step_ca | `step-ca.lan` | `step_ca_hosts` | `tasks/cname.yml` |
+| traefik | `traefik.<host>.lan` | — (inventory) | `tasks/cname.yml` |
+| vaultwarden | `vw.lan` | — (inventory) | `tasks/cname.yml` |
+| postgres (meta) | `db.lan` | `postgres_hosts` | `tasks/cname.yml` |
+| meilisearch (meta) | `meili.lan` | `meilisearch_hosts` | `tasks/cname.yml` |
 
-## Difficulty: Medium
-- ~7 roles need CNAME registration added
-- 1-2 roles may have cross-references that need fixing
-- Low risk (DNS changes are idempotent via UCI)
+**Roles correctly without CNAME:** beszel_agent (outbound-only), portainer_edge (registers with Portainer main)
+
+### Rollback
+
+All changes are idempotent DNS + task restructuring. Revert the commit to restore inline registration and hardcoded hostname.

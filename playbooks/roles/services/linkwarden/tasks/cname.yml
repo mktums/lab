@@ -1,0 +1,8 @@
+---
+# Register CNAME after deployment (DNS must exist before traefik routes)
+- name: Register Linkwarden CNAME
+  ansible.builtin.include_role:
+    name: common
+    tasks_from: register_cname
+  vars:
+    cname_name: "{{ linkwarden_cname }}.{{ lan_domain }}"

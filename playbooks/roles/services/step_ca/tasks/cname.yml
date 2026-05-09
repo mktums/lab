@@ -1,0 +1,7 @@
+---
+- name: Register step-ca CNAME
+  ansible.builtin.include_role:
+    name: common
+    tasks_from: register_cname
+  vars:
+    cname_name: "{{ step_ca_cname }}.{{ lan_domain }}"

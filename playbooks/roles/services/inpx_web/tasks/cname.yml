@@ -1,0 +1,7 @@
+---
+- name: Register inpx-web CNAME
+  ansible.builtin.include_role:
+    name: common
+    tasks_from: register_cname
+  vars:
+    cname_name: "{{ inpx_web_cname }}.{{ lan_domain }}"
