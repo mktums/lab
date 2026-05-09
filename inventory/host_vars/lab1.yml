@@ -19,5 +19,5 @@ beszel_smart_cap_add:
   - SYS_RAWIO
   - SYS_ADMIN
 beszel_extra_volumes:
-  - /mnt/reds/.beszel:/extra-filesystems/md0p1:ro
+  - /dev/disk/by-label/reds:/extra-filesystems/reds:ro
   - /mnt/green/.beszel:/extra-filesystems/sdd1:ro
