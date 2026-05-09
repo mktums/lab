@@ -32,12 +32,12 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-{% else %}{% if beszel_agent_devices | default([]) | length > 0 %}
+{% endif %}{% if beszel_agent_devices | default([]) | length > 0 %}
     devices:
 {% for dev in beszel_agent_devices %}
       - "{{ dev }}"
 {% endfor %}
-{% endif %}{% endif %}
+{% endif %}
     labels:
       io.beszel.agent: "true"
       io.beszel.hostname: "{{ inventory_hostname }}"
