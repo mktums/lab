@@ -5,7 +5,7 @@ downloads_dir: "/mnt/reds/downloads"
 
 system_optimize_mounts:
   - /
-  - /mnt/reds
+  - /mnt/scratch
   - /mnt/green
 
 # Beszel agent configuration
@@ -19,5 +19,6 @@ beszel_smart_cap_add:
   - SYS_RAWIO
   - SYS_ADMIN
 beszel_extra_volumes:
-  - /dev/disk/by-label/reds:/extra-filesystems/reds:ro
-  - /mnt/green/.beszel:/extra-filesystems/sdd1:ro
+  - /mnt/reds/.beszel:/extra-filesystems/sda__reds:ro
+  - /mnt/scratch/.beszel:/extra-filesystems/sdb1__scratch:ro
+  - /mnt/green/.beszel:/extra-filesystems/sdd1__green:ro

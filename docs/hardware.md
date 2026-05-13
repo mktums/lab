@@ -12,7 +12,7 @@
 |---|---|---|---|
 | **Codename** | Furnace | Eternal | Starship |
 | **CPU** | Core i7 7820X | Pentium G4400 | Core i9 13900KF |
-| **RAM** | 2x 16Gb DDR4 2133 | 1x 8Gb DDR4 2133 | 2x 32Gb DDR5 6000 |
+| **RAM** | 1x 16Gb DDR4 2133<br>Corsair Vengeance LPX `CMK32GX4M2A2666C` | 1x 8Gb DDR4 2133 | 2x 32Gb DDR5 6000 |
 | **MB** | ASRock X299 Taichi XE | ASUS B150M-A | MSI MPG Z790 CARBON WIFI |
 | **GPU** | Palit GeForce RTX 2080 SUPER JETSTREAM 8GB *(no fans)*| --- | MSI GeForce RTX 4090 SUPRIM X 24G |
 | **Storage** | Samsung 960 PRO 512GB<br>WD Green 1TB<br>3x WD Red 3TB *(almost dead)* | Samsung SSD 850 EVO 250GB<br>WD Blue 2TB | WD Black SN850 1Tb |
