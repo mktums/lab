@@ -1,0 +1,8 @@
+[Unit]
+Description=Kopia repository full verification (monthly 100%)
+Requires=docker.socket
+After=docker.socket
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker compose -f {{ kopia_opt_dir }}/docker-compose.yml exec kopia-server kopia snapshot verify --verify-files-percent=100 --file-parallelism=4 --parallel=4

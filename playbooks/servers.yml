@@ -83,3 +83,7 @@
     - role: linkwarden
       tags: [linkwarden]
       when: inventory_hostname in groups.get('linkwarden_hosts', [])
+
+    - role: kopia_server
+      tags: [kopia]
+      when: inventory_hostname in groups.get('kopia_server_hosts', [])

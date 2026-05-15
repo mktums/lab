@@ -13,6 +13,8 @@ services:
       --entrypoints.web.http.redirections.entrypoint.scheme=https
       --entrypoints.web.http.redirections.entrypoint.permanent=true
       --entrypoints.websecure.address=:443
+      --entrypoints.websecure.transport.respondingTimeouts.readTimeout=0
+      --entrypoints.websecure.transport.respondingTimeouts.idleTimeout=30m
       --providers.docker.exposedbydefault=false
       --providers.docker.watch=true
       --providers.file.filename=/traefik-dynamic.yml

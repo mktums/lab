@@ -1,0 +1,31 @@
+services:
+  kopia-server:
+    image: "{{ kopia_image_name }}:{{ kopia_image_tag }}"
+    restart: unless-stopped
+    # Internal port only — Traefik terminates TLS on :443 externally, connects to Kopia via HTTPS
+    ports:
+      - "127.0.0.1:{{ kopia_internal_port }}:{{ kopia_internal_port }}"
+    volumes:
+      - "{{ kopia_repo_path }}:/data"
+      - "{{ kopia_config_dir }}:/app/config"
+      - "{{ kopia_cache_dir }}:/app/cache"
+      - "{{ kopia_logs_dir }}:/app/logs"
+      # - /mnt/kopia-tmp:/tmp:shared  # uncomment for snapshot browsing
+    env_file:
+      - .env
+    environment:
+      TZ: "{{ timezone }}"
+    command: >-
+      server start
+      --address=0.0.0.0:{{ kopia_internal_port }}
+{% if kopia_tls_generate_cert %}
+      --tls-generate-cert
+{% endif %}
+      --tls-cert-file=/app/config/server.cert
+      --tls-key-file=/app/config/server.key
+      --server-username={{ kopia_server_admin_user }}
+      --server-password=${KOPIA_SERVER_ADMIN_PASSWORD}
+      --server-control-username=${KOPIA_SERVER_CONTROL_USER}
+      --server-control-password=${KOPIA_SERVER_CONTROL_PASSWORD}
+
+

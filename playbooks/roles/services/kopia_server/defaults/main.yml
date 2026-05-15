@@ -1,0 +1,33 @@
+# Kopia server defaults
+
+# Image
+kopia_image_name: "kopia/kopia"
+kopia_image_tag: "0.22"
+
+# Paths
+kopia_opt_dir: "{{ ansible_opt_base }}/kopia_server"
+kopia_config_dir: "{{ docker_data_base }}/kopia_server/config"
+kopia_cache_dir: "{{ docker_data_base }}/kopia_server/cache"
+kopia_logs_dir: "{{ docker_data_base }}/kopia_server/logs"
+kopia_repo_path: "/mnt/reds/!backup/repository"
+
+# Network (internal, Traefik terminates TLS externally)
+kopia_internal_port: 51514
+
+# CNAME subdomain (without .{{ lan_domain }})
+kopia_cname: "kopia"
+
+# Maintenance owner user@hostname (first agent identity or admin)
+kopia_maintenance_owner: "admin@server"
+
+# Global policy defaults (applied once during deployment, idempotent via changed_when:false)
+kopia_global_max_parallel_file_reads: 8   # Conservative for 16GB RAM with concurrent backups
+kopia_global_max_parallel_snapshots: 4    # Staggered service backups without saturating mirror I/O
+
+# Global retention defaults (inherited by all sources, override per-source in register_source.yml)
+kopia_retention_keep_latest: 10           # Most recent snapshots always kept
+kopia_retention_keep_hourly: 48           # Last 48 hourly snapshots (2 days)
+kopia_retention_keep_daily: 7             # Last 7 daily snapshots (1 week)
+kopia_retention_keep_weekly: 4            # Last 4 weekly snapshots (1 month)
+kopia_retention_keep_monthly: 24          # Last 24 monthly snapshots (2 years)
+kopia_retention_keep_annual: 3            # Last 3 annual snapshots

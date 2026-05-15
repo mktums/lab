@@ -1,0 +1,9 @@
+---
+- name: Restart Kopia server
+  community.docker.docker_compose_v2:
+    project_src: "{{ kopia_opt_dir }}"
+    state: present
+
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: yes

@@ -9,6 +9,21 @@ http:
       service: api@internal
       middlewares:
         - dashboard-auth
+    kopia:
+      rule: "Host(`{{ kopia_cname | default('kopia') }}.{{ lan_domain }}`)"
+      entrypoints:
+        - websecure
+      tls:
+        certResolver: step-ca
+      service: kopia
+
+
+  services:
+    kopia:
+      loadBalancer:
+        serversTransport: kopia-transport@file
+        servers:
+          - url: "https://127.0.0.1:{{ kopia_internal_port | default(51514) }}"
 
   middlewares:
     dashboard-auth:
@@ -16,3 +31,14 @@ http:
         users:
           - "{{ traefik_dashboard_user }}:{{ traefik_dashboard_password | password_hash('bcrypt', vault_bcrypt_salt) }}"
 
+  serversTransports:
+    kopia-transport:
+      insecureSkipVerify: true
+      # Включаем поддержку HTTP/2 (gRPC) для HTTPS бэкенда
+      rootCAs: [] 
+      # Настройка таймаутов отправки данных к бэкенду Kopia
+      forwardingTimeouts:
+        dialTimeout: "30s"
+        idleConnTimeout: "30m"
+    insecure-skip-verify:
+      insecureSkipVerify: true

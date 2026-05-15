@@ -1,0 +1,115 @@
+---
+- name: Create Kopia directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group | default(omit) }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "{{ kopia_repo_path }}", owner: "root", mode: "0700" }
+    - { path: "{{ kopia_config_dir }}", owner: "root", mode: "0700" }
+    - { path: "{{ kopia_cache_dir }}", owner: "root", mode: "0700" }
+    - { path: "{{ kopia_opt_dir }}", owner: "root", mode: "0755" }
+
+- name: Check if repository config exists
+  ansible.builtin.stat:
+    path: "{{ kopia_config_dir }}/repository.config"
+  register: kopia_config_stat
+
+- name: Pull Kopia image
+  community.docker.docker_image:
+    name: "{{ kopia_image_name }}"
+    tag: "{{ kopia_image_tag }}"
+    source: pull
+  when: not kopia_config_stat.stat.exists
+
+- name: Initialize Kopia repository (first run only)
+  ansible.builtin.shell: >-
+    docker run --rm
+    -v "{{ kopia_config_dir }}:/app/config"
+    -v "{{ kopia_cache_dir }}:/app/cache"
+    -v "{{ kopia_repo_path }}:/data"
+    {{ kopia_image_name }}:{{ kopia_image_tag }}
+    repository create filesystem --path /data
+  args:
+    stdin: "{{ kopia_repo_password }}"
+  when: not kopia_config_stat.stat.exists
+  no_log: true
+
+- name: Check if TLS certificate exists
+  ansible.builtin.stat:
+    path: "{{ kopia_config_dir }}/server.cert"
+  register: kopia_tls_cert_stat
+
+- name: Set TLS generate cert flag (first run only)
+  ansible.builtin.set_fact:
+    kopia_tls_generate_cert: "{{ not kopia_tls_cert_stat.stat.exists }}"
+
+- name: Render compose file and env
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ kopia_opt_dir }}/{{ item.dest }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { src: docker-compose.yml.j2, dest: docker-compose.yml, mode: '0644' }
+    - { src: .env.j2, dest: .env, mode: '0600' }
+  notify: Restart Kopia server
+
+- name: Deploy Kopia server stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ kopia_opt_dir }}"
+    files:
+      - docker-compose.yml
+    state: present
+    wait: true
+    wait_timeout: 120
+    pull: missing
+
+- name: Set maintenance ownership (first agent identity)
+  ansible.builtin.shell: >-
+    docker compose exec kopia-server kopia maintenance set --owner={{ kopia_maintenance_owner }}
+  args:
+    chdir: "{{ kopia_opt_dir }}"
+  changed_when: false
+  no_log: true
+
+- name: Set global repository policy (compression, parallelism, cache dirs, retention)
+  ansible.builtin.shell: >-
+    docker compose exec kopia-server kopia policy set --global \
+      --compression=zstd \
+      --add-never-compress=mp4,mkv,avi,iso,zip,gz,xz,tar.gz,7z,rar \
+      --max-parallel-file-reads={{ kopia_global_max_parallel_file_reads }} \
+      --max-parallel-snapshots={{ kopia_global_max_parallel_snapshots }} \
+      --ignore-cache-dirs=true \
+      --keep-latest={{ kopia_retention_keep_latest }} \
+      --keep-hourly={{ kopia_retention_keep_hourly }} \
+      --keep-daily={{ kopia_retention_keep_daily }} \
+      --keep-weekly={{ kopia_retention_keep_weekly }} \
+      --keep-monthly={{ kopia_retention_keep_monthly }} \
+      --keep-annual={{ kopia_retention_keep_annual }} \
+      --ignore-identical-snapshots=true
+  args:
+    chdir: "{{ kopia_opt_dir }}"
+  changed_when: false
+  no_log: true
+
+- name: Deploy verification timers and services
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { src: kopia-verify.timer.j2, dest: /etc/systemd/system/kopia-verify.timer, mode: '0644' }
+    - { src: kopia-verify.service.j2, dest: /etc/systemd/system/kopia-verify.service, mode: '0644' }
+    - { src: kopia-verify-full.timer.j2, dest: /etc/systemd/system/kopia-verify-full.timer, mode: '0644' }
+    - { src: kopia-verify-full.service.j2, dest: /etc/systemd/system/kopia-verify-full.service, mode: '0644' }
+  notify: Reload systemd
+
+- name: Enable verification timers
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: yes
+  loop:
+    - kopia-verify.timer
+    - kopia-verify-full.timer

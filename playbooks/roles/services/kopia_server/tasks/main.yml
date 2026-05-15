@@ -1,0 +1,6 @@
+---
+- name: Deploy Kopia server (lab1 only)
+  block:
+    - ansible.builtin.include_tasks: deploy.yml
+    - ansible.builtin.include_tasks: cname.yml
+  when: inventory_hostname in groups.get('kopia_server_hosts', [])

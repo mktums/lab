@@ -1,0 +1,10 @@
+[Unit]
+Description=Kopia repository verification (daily 5% sample)
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=7200
+Persistent=true
+
+[Install]
+WantedBy=timers.target

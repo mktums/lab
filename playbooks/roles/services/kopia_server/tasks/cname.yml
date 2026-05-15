@@ -1,0 +1,7 @@
+---
+- name: Register Kopia server CNAME
+  ansible.builtin.include_role:
+    name: common
+    tasks_from: register_cname
+  vars:
+    cname_name: "{{ kopia_cname }}.{{ lan_domain }}"

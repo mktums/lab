@@ -97,3 +97,9 @@ beszel_admin_email: "{{ vault_beszel_admin_email }}"
 beszel_admin_password: "{{ vault_beszel_admin_password }}"
 beszel_token: "{{ vault_beszel_token }}"
 beszel_hub_key: "{{ vault_beszel_hub_key }}"
+
+# Kopia
+kopia_repo_password: "{{ vault_kopia_repo_password }}"
+kopia_server_admin_user: "{{ vault_kopia_server_admin_user }}"
+kopia_server_admin_pass: "{{ vault_kopia_server_admin_pass }}"
+kopia_control_password: "{{ vault_kopia_control_password }}"
