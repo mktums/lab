@@ -106,9 +106,10 @@
     - { src: kopia-verify-full.service.j2, dest: /etc/systemd/system/kopia-verify-full.service, mode: '0644' }
   notify: Reload systemd
 
-- name: Enable verification timers
+- name: Start and enable verification timers
   ansible.builtin.systemd:
     name: "{{ item }}"
+    state: started
     enabled: yes
   loop:
     - kopia-verify.timer
