@@ -10,11 +10,10 @@ services:
       - "{{ kopia_config_dir }}:/app/config"
       - "{{ kopia_cache_dir }}:/app/cache"
       - "{{ kopia_logs_dir }}:/app/logs"
+      - /etc/localtime:/etc/localtime:ro
       # - /mnt/kopia-tmp:/tmp:shared  # uncomment for snapshot browsing
     env_file:
       - .env
-    environment:
-      TZ: "{{ timezone }}"
     command: >-
       server start
       --address=0.0.0.0:{{ kopia_internal_port }}

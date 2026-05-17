@@ -13,6 +13,7 @@ services:
     volumes:
       - "{{ inpx_web_data_dir }}:/data"
       - "{{ downloads_dir }}:/downloads:ro"
+      - /etc/localtime:/etc/localtime:ro
     environment:
       LIB_DOMAIN: "{{ inpx_web_cname }}.{{ lan_domain }}"
     labels:

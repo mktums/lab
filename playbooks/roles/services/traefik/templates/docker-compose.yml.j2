@@ -34,5 +34,6 @@ services:
       - "{{ traefik_config_dir }}/traefik-dynamic.yml:/traefik-dynamic.yml:ro"
       - "{{ traefik_data_dir }}/acme:/acme"
       - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
+      - /etc/localtime:/etc/localtime:ro
     labels:
       traefik.enable: "false"

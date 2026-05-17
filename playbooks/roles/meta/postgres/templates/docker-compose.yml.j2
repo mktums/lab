@@ -7,11 +7,12 @@ services:
       - "{{ postgres_port }}:5432"
     volumes:
       - "{{ postgres_data_dir }}:/var/lib/postgresql/data"
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      POSTGRES_PASSWORD: "{{ postgres_password }}"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U {{ postgres_user | default('postgres') }}"]
       interval: 30s
       timeout: 5s
       retries: 3
-    environment:
-      POSTGRES_PASSWORD: "{{ postgres_password }}"
     shm_size: "{{ postgres_shm_size }}"

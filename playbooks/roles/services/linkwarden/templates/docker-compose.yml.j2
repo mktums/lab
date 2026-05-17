@@ -45,6 +45,7 @@ services:
     env_file: "{{ linkwarden_opt_dir }}/.env"
     volumes:
       - "{{ linkwarden_data_dir }}/data:/data/data"
+      - /etc/localtime:/etc/localtime:ro
     labels:
       traefik.enable: "true"
       traefik.http.routers.linkwarden.rule: "Host(`{{ linkwarden_cname }}.{{ lan_domain }}`)"

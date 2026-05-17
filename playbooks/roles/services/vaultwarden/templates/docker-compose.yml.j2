@@ -5,6 +5,7 @@ services:
     restart: unless-stopped
     volumes:
       - "{{ vaultwarden_data_dir }}:/data"
+      - /etc/localtime:/etc/localtime:ro
     environment:
       DOMAIN: "https://{{ vaultwarden_cname }}.{{ lan_domain }}"
       ADMIN_TOKEN: "{{ vaultwarden_admin_token }}"

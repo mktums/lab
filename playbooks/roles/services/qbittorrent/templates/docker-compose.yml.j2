@@ -15,12 +15,12 @@ services:
     environment:
       PUID: "{{ container_puid | string }}"
       PGID: "{{ container_pgid | string }}"
-      TZ: "{{ timezone }}"
       WEBUI_PORT: "{{ qbittorrent_web_port | string }}"
       TORRENTING_PORT: "{{ qbittorrent_torrent_port | string }}"
     volumes:
       - "{{ qbittorrent_data_dir }}:/config"
       - "{{ downloads_dir }}:/downloads"
+      - /etc/localtime:/etc/localtime:ro
     labels:
       traefik.enable: "true"
       traefik.http.routers.qbittorrent.rule: "Host(`{{ qbittorrent_cname }}.{{ inventory_hostname }}.{{ lan_domain }}`)"

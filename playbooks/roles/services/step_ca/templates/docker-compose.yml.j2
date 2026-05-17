@@ -10,3 +10,4 @@ services:
       DOCKER_STEPCA_INIT_ACME: "true"
     volumes:
       - "{{ step_ca_data_dir }}:/home/step"
+      - /etc/localtime:/etc/localtime:ro
