@@ -1,0 +1,10 @@
+[Unit]
+Description=Kopia backup for %I
+
+[Timer]
+OnCalendar={{ kopia_timer_on_calendar }}
+RandomizedDelaySec={{ kopia_timer_randomized_delay_sec }}
+Persistent=true
+
+[Install]
+WantedBy=timers.target

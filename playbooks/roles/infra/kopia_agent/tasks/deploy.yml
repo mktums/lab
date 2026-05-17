@@ -1,0 +1,41 @@
+---
+# deploy.yml — host-level Kopia agent setup (run once per host)
+
+- name: Download Kopia .deb from GitHub releases
+  ansible.builtin.get_url:
+    url: "https://github.com/kopia/kopia/releases/download/v{{ kopia_version }}/kopia_{{ kopia_version }}_linux_amd64.deb"
+    dest: "/tmp/kopia_{{ kopia_version }}_amd64.deb"
+    mode: "0644"
+
+- name: Install Kopia .deb package
+  ansible.builtin.apt:
+    deb: "/tmp/kopia_{{ kopia_version }}_amd64.deb"
+    state: present
+
+- name: Remove downloaded .deb file
+  ansible.builtin.file:
+    path: "/tmp/kopia_{{ kopia_version }}_amd64.deb"
+    state: absent
+
+- name: Ensure Kopia directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0700"
+  loop:
+    - "{{ kopia_agent_config_dir }}"
+    - "{{ kopia_cache_base }}"
+
+- name: Deploy systemd timer template
+  ansible.builtin.template:
+    src: kopia-backup@.timer.j2
+    dest: /etc/systemd/system/kopia-backup@.timer
+    mode: "0644"
+  notify: Reload systemd
+
+- name: Deploy systemd service template
+  ansible.builtin.template:
+    src: kopia-backup@.service.j2
+    dest: /etc/systemd/system/kopia-backup@.service
+    mode: "0644"
+  notify: Reload systemd

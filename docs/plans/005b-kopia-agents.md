@@ -4,33 +4,27 @@
 
 Deploy backup agents for all lab services and personal devices connecting to the central Kopia repository server. See [005a](./005a-kopia-server.md) for server deployment.
 
+**Status:** Lab agents done. Non-homelab clients planned.
+
 ### Scope
 
-| Component | Deployment method |
-|-----------|-------------------|
-| Lab services | Per-service systemd timer + native Kopia binary (apt) per host |
-| Personal PC | Windows/Linux agent (Ansible + WinRM/SSH) |
-| MacBook | macOS agent (automated via Ansible) |
-| Android devices | Kopia app with repo connection instructions |
+| Component | Status |
+|-----------|--------|
+| Lab services — systemd timer + native kopia (apt) | Done |
+| register_source.yml (per-source retention, actions, seed guard) | Done |
+| Folder-level actions (before/after) | Done |
+| Postgres backup integration (per-DB + globals dump) | Done |
+| Personal PC — Windows Task Scheduler / Linux agent | Planned |
+| MacBook — LaunchAgent + TCC permissions | Planned |
+| Android devices — Kopia app setup | Planned |
 
-## Affected files
+## Architecture
 
-| File | Change |
-|------|--------|
-| `playbooks/roles/kopia_agent/` | New — agent deployment role |
-| `inventory/group_vars/servers.yml` | Agent vars (repo URL, schedule defaults) |
-| `inventory/hosts.yml` | Add `kopia_hosts` group |
-| Each service role (`defaults/main.yml`) | Add backup paths and retention policy declarations |
-| Each service role (`tasks/main.yml`) | Include `backup.yml` -> `register_source.yml` |
-| `docs/kopia/android-setup.md` | New — Android device instructions |
-
-## Architecture (PROBABLE — draft phase)
-
-**Status:** Probable solution, subject to change during implementation. Key assumptions: per-service systemd timers with native processes, host-side pre-action scripts deployed via Ansible templates, env-file passing for service-specific variables.
+**Status:** Implemented. Per-service systemd timers with native processes, host-side pre-action scripts deployed via Ansible templates.
 
 ### Per-service systemd timer + native process
 
-Each service backs up under its own Kopia identity (e.g. `stepca@server`, `traefik@server`) for clean snapshot tree separation and seamless migration between hosts. The backup is triggered by a per-service systemd timer that fires a native process running `/usr/bin/kopia snapshot create`.
+Each service backs up under its own Kopia identity (e.g. `postgres@server`) for clean snapshot tree separation and seamless migration between hosts. The backup is triggered by a per-service systemd timer that fires a native process running `/usr/bin/kopia snapshot create`.
 
 **Key components:**
 
@@ -39,14 +33,14 @@ Each service backs up under its own Kopia identity (e.g. `stepca@server`, `traef
 | Kopia binary | `/usr/bin/kopia` (apt package) | kopia_agent role (host-level, deployed once) |
 | Per-service config | `{{ ansible_opt_base }}/kopia/agents/<identity>.config` | Each service role via `register_source.yml` |
 | Systemd timer template | `kopia-backup@.timer.j2` | kopia_agent role (deployed once) |
-| Timer instance | `kopia-backup@stepca.timer` | Each service role (enabled on first deploy) |
+| Timer instance | `kopia-backup@postgres.timer` | Each service role (enabled on first deploy) |
 
 ### How it works
 
-1. The systemd timer fires according to its schedule (e.g. hourly, staggered per service)
-2. The timer triggers a one-shot service: `/usr/bin/kopia snapshot create --config {{ ansible_opt_base }}/kopia/agents/<identity>.config`
+1. The systemd timer fires according to its schedule (default: hourly with 300s random delay)
+2. The timer triggers a one-shot service: `/usr/bin/kopia snapshot create --all --config <agent_config>`
 3. Kopia reads config, connects to server as `<identity>`, snapshots declared paths with native filesystem access
-4. Process exits, systemd marks unit as inactive (dead)
+4. Process exits, systemd marks unit as inactive
 
 ### Concurrent execution
 
@@ -54,181 +48,36 @@ Multiple service timers may fire in the same time window. Each triggers an indep
 
 - Processes are isolated (separate config files, separate cache dirs via `KOPIA_CACHE_DIR`, separate identities)
 - Kopia server handles concurrent clients natively (per-source `sourceManager` goroutines, repository-level locking at blob layer)
-- Source reads are independent (`/srv/docker_data/postgres` and `/srv/docker_data/traefik` don't conflict)
+- Source reads are independent (`/srv/docker_data/postgres/backups` and `/srv/docker_data/vaultwarden` don't conflict)
 
-If I/O burst on the backup server is a concern, timer schedules can be staggered per service (different `OnCalendar` values so they spread across the hour).
+Timer schedules can be staggered per service (different `OnCalendar` values so they spread across the hour).
 
 ### Secret management in actions
 
 Kopia logs action commands, so passwords must never be passed as environment variables. Use credential files instead:
 
-- **PostgreSQL**: `.pgpass` file (mode 0600) at `{{ ansible_opt_base }}/kopia/agents/<svc>.pgpass`, mounted into dump container via `-v`
-- **MySQL**: `--defaults-file=/path/to/.my.cnf` with credentials in host-mounted file
+- **PostgreSQL**: `.pgpass` file (mode 0600) at `{{ ansible_opt_base }}/kopia/agents/<svc>.pgpass`, mounted into container via `-v`
 - **API tokens** (Vaultwarden): `.env` file is acceptable for non-password tokens, loaded via systemd `EnvironmentFile=`
-
-Ansible deploys these files via `template:` module with `mode: '0600'`, sourced from vault secrets.
-
-### Pre-action scripts on host
-
-Pre-action scripts are deployed to the host (not persisted in Kopia repo) via Ansible `template:` module. This avoids script sync issues — changes are unconditionally overwritten on each playbook run, and the script path registered with Kopia policy remains constant.
-
-### Full chain examples
-
-#### Scenario 1: Simple service (no action needed) — step-ca
-
-**Service role `defaults/main.yml`:**
-```yaml
-kopia_backup_paths:
-  - "{{ docker_data_base }}/step-ca"
-kopia_retention_policy:
-  keep_latest: 7
-  keep_daily: 30
-  keep_weekly: 4
-```
-
-**Service role `tasks/main.yml` (after deploy):**
-```yaml
-- name: Register Kopia backup source
-  ansible.builtin.include_role:
-    name: kopia_agent
-    tasks_from: register_source
-  vars:
-    kopia_service_name: stepca
-    kopia_override_username: "{{ kopia_service_name }}"
-    kopia_override_hostname: server
-```
-
-**Backup execution chain:**
-1. Timer `kopia-backup@stepca.timer` fires at `*:0/60`
-2. Service runs: `/usr/bin/kopia snapshot create --config {{ ansible_opt_base }}/kopia/agents/stepca@server.config`
-3. Kopia reads config, connects to server as `stepca@server`, snapshots `/srv/docker_data/step-ca`
-4. Process exits, systemd marks unit as inactive
-
-#### Scenario 2: Database with container invocation — PostgreSQL
-
-**Service role `defaults/main.yml`:**
-```yaml
-kopia_backup_paths:
-  - "{{ docker_data_base }}/postgres"
-kopia_retention_policy:
-  keep_latest: 7
-  keep_daily: 14
-  keep_weekly: 4
-kopia_pre_action_env:
-  PG_IMAGE: "postgres:{{ postgres_image_version | default('16') }}"
-  PG_USER: "{{ vault_postgres_user }}"
-  PG_DB: "{{ postgres_database }}"
-kopia_secrets_file: ".pgpass"  # Ansible deploys to {{ ansible_opt_base }}/kopia/agents/postgres.pgpass (mode 0600)
-```
-
-**`.pgpass` file deployed by Ansible (template, mode 0600):**
-```
-127.0.0.1:5432:{{ postgres_database }}:{{ vault_postgres_user }}:{{ vault_postgres_password }}
-```
-
-**Backup execution chain:**
-1. Timer `kopia-backup@postgres.timer` fires at `*:0/60`
-2. Service runs: `/usr/bin/kopia snapshot create --config {{ ansible_opt_base }}/kopia/agents/postgres@server.config` (loads env from `EnvironmentFile=` in systemd unit)
-3. Kopia finds before action for `/srv/docker_data/postgres`, executes (script on host):
-   ```sh
-   mkdir -p /tmp/kopia-dumps/postgres && chmod 700 /tmp/kopia-dumps/postgres
-   docker run --rm --network host \
-     -v {{ ansible_opt_base }}/kopia/agents/postgres.pgpass:/root/.pgpass:ro \
-     "$PG_IMAGE" pg_dump -h 127.0.0.1 -U "$PG_USER" "$PG_DB" > /tmp/kopia-dumps/postgres/pg-dump-$$.sql
-   echo KOPIA_SNAPSHOT_PATH=/tmp/kopia-dumps/postgres
-   ```
-4. Kopia snapshots `/tmp/kopia-dumps/postgres` (the dump file) under `postgres@server:/srv/docker_data/postgres`
-5. After action runs: `rm -rf /tmp/kopia-dumps/postgres/pg-dump-$$.sql`
-6. Process exits, systemd marks unit as inactive
-
-#### Scenario 3: Script-based backup — Vaultwarden (curl + sops)
-
-**Service role `defaults/main.yml`:**
-```yaml
-kopia_backup_paths:
-  - "{{ docker_data_base }}/vaultwarden"
-kopia_retention_policy:
-  keep_latest: 7
-  keep_daily: 30
-  keep_weekly: 4
-kopia_pre_action_env:
-  VW_URL: "http://localhost:8229/api/v1"
-  VW_ADMIN_TOKEN: "{{ vault_vaultwarden_admin_token }}"
-```
-
-**Backup execution chain:**
-1. Timer `kopia-backup@vaultwarden.timer` fires at `*:0/60`
-2. Service runs: `/usr/bin/kopia snapshot create --config {{ ansible_opt_base }}/kopia/agents/vaultwarden@server.config` (loads env from `EnvironmentFile=` in systemd unit)
-3. Kopia finds before action, executes (curl dumps API data into source dir):
-   ```sh
-   curl -sH "Authorization: ${VW_ADMIN_TOKEN}" "${VW_URL}/admin/export?format=csv" > "$KOPIA_SOURCE_PATH/vaultwarden-export.csv"
-   ```
-4. Kopia snapshots `/srv/docker_data/vaultwarden` (data dir + export CSV)
-5. Process exits, systemd marks unit as inactive
-
-### Shared infrastructure (deployed once by kopia_agent host-level role)
-
-**Systemd timer template `kopia-backup@.timer`:**
-```ini
-[Unit]
-Description=Kopia backup for %I
-
-[Timer]
-OnCalendar=*:0/60
-RandomizedDelaySec=300
-Persistent=true
-
-[Install]
-WantedBy=timers.target
-```
-
-**Systemd service template `kopia-backup@.service`:**
-```ini
-[Unit]
-Description=Kopia backup for %I
-Wants=network-online.target
-After=network-online.target
-
-[Service]
-Type=oneshot
-EnvironmentFile=-{{ ansible_opt_base }}/kopia/agents/%I.env
-Environment=KOPIA_CACHE_DIR={{ ansible_opt_base }}/kopia/cache/%I
-ExecStartPre=/usr/bin/nc -z -w 3 {{ kopia_server_host }} 51514
-ExecStart=/usr/bin/kopia snapshot create --config {{ ansible_opt_base }}/kopia/agents/%I@server.config
-
-[Install]
-WantedBy=multi-user.target
-```
-
-### Repository verification (scheduled on server only)
-
-**Important:** `kopia repository verify` must run on the Kopia server host under admin credentials, not from client configs. Client tokens have limited ACL scope (own snapshots only) and cannot perform full repository integrity checks.
-
-Deployed as part of kopia_server role:
-
-| Timer | Schedule | Command |
-|-------|----------|---------|
-| `kopia-verify.timer` | daily (RandomizedDelaySec=7200) | `docker compose exec kopia-server kopia snapshot verify --verify-files-percent=5 --file-parallelism=4 --parallel=4` |
-| `kopia-verify-full.timer` | monthly (RandomizedDelaySec=43200) | same with `--verify-files-percent=100` |
 
 ### First deploy flow (register_source.yml)
 
 Idempotent task file included by each service role:
 
-1. **Provision user on Kopia server** via `delegate_to` — password passed via `args.stdin` in Ansible shell module (never as CLI arg or echo), skip if exists (`failed_when: false`)
-2. **Check if config exists** — `stat` on agent config path, register result
-3. **Connect agent with override identity** — only runs when `not kopia_config_stat.stat.exists`, passes password via Ansible `args.stdin` (never as CLI arg or echo) to avoid leaking into `ps aux` and Ansible logs, writes config file with `--enable-actions` flag
-4. **Set retention policy** — always runs, marked `changed_when: false` (Kopia returns exit code 0 regardless of whether values changed)
+1. **Deploy systemd templates** — timer + service units on disk
+2. **Provision user on Kopia server** via `delegate_to` — password passed via `--password` CLI flag, skip if exists
+3. **Connect agent with override identity** — only runs when config doesn't exist, uses `--enable-actions` flag for snapshot actions support
+4. **Set per-source retention policy** — loops over `kopia_sources` dict, sets policy on each path with `kopia policy set <path>`
 5. **Deploy .env file** — template rendered if `kopia_pre_action_env` is defined and non-empty
-6. **Deploy pre-action script to host** — writes script file via `template:` (mode 0755) if `kopia_pre_action_path` is defined; unconditionally overwrites to sync changes
-7. **Register before/after actions in Kopia policy** — points to host script path, always runs, marked `changed_when: false` (Kopia returns exit code 0 regardless of whether path changed)
-8. **Enable systemd timer instance** — `systemd: name=kopia-backup@{{ kopia_service_name }}, enabled=yes`
+6. **Deploy snapshot-root action scripts to host** — writes script files via `template:` (mode 0755) if defined; unconditionally overwrites to sync changes
+7. **Register snapshot-root actions in Kopia policy** — points to host script path, loops over sources
+8. **Create first snapshot** — explicit paths seed source history so `--all` works on scheduled runs
+9. **Enable systemd timer instance** — `systemd: name=kopia-backup@<username>, enabled=yes`
 
 ## Implementation steps
 
 ### Step 1: Create kopia_agent role (host-level setup)
 
-- Install Kopia binary via apt package (`apt: name=kopia state=present`) or official repo
+- Install Kopia binary via .deb package from GitHub releases
 - Deploy systemd timer template (`kopia-backup@.timer.j2`) and service unit (`kopia-backup@.service.j2`)
 - Create agent config directory (`{{ ansible_opt_base }}/kopia/agents/`)
 
@@ -238,11 +87,11 @@ Each service role includes this via `include_role: name:kopia_agent tasks_from:r
 
 ### Step 3: Integrate into service roles
 
-Each service declares in `defaults/main.yml`:
-- `kopia_backup_paths` — list of directories to snapshot
-- `kopia_retention_policy` — retention tiers (keep_latest, keep_daily, etc.)
+Each service declares in `defaults/backup.yml`:
+- `kopia_sources` — dict of paths to snapshot with per-source retention settings and optional folder-level actions
 - Optional: `kopia_pre_action_env` — env vars for pre-action scripts
-- Optional: `kopia_pre_action_path` — path to host-side pre-action script template (deployed via Ansible `template:`)
+- Optional: `kopia_before_snapshot_root_action_path` / `kopia_after_snapshot_root_action_path` — inherited by all sources (e.g. database dump)
+- Per-source: `before_folder_action_path` / `after_folder_action_path` inside each source entry — NOT inherited, set explicitly per path (e.g. unarchive/rearchive for dedup)
 
 Each service `tasks/main.yml` includes after deployment:
 ```yaml
@@ -250,10 +99,6 @@ Each service `tasks/main.yml` includes after deployment:
   ansible.builtin.include_role:
     name: kopia_agent
     tasks_from: register_source
-  vars:
-    kopia_service_name: <service>
-    kopia_override_username: "{{ kopia_service_name }}"
-    kopia_override_hostname: server
 ```
 
 ### Step 4: Configure non-homelab agents
@@ -289,4 +134,4 @@ Each service `tasks/main.yml` includes after deployment:
 
 ## Rollback
 
-Disable systemd timer instances, remove agent config files. Server-side user accounts can be cleaned up via `kopia server user delete`. Existing snapshots remain in the repository until retention expires them.
+Disable systemd timer instances, remove agent config files. Server-side user accounts can be cleaned up via `kopia server users delete`. Existing snapshots remain in the repository until retention expires them.

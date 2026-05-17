@@ -1,0 +1,18 @@
+# Kopia agent defaults (host-level, deployed once per host)
+
+# Version (pinned, update manually)
+kopia_version: "0.23.0"
+
+# Server connection
+kopia_server_host: "{{ groups['kopia_server_hosts'][0] }}"
+kopia_server_url: "https://{{ kopia_cname }}.{{ lan_domain }}:443"
+
+# Paths
+kopia_agent_config_dir: "{{ ansible_opt_base }}/kopia/agents"
+kopia_cache_base: "{{ ansible_opt_base }}/kopia/cache"
+
+# Retention defaults (identity-level, shared with kopia_server role)
+
+# Timer defaults (override per-service via kopia_timer_calendar)
+kopia_timer_on_calendar: "hourly"
+kopia_timer_randomized_delay_sec: 300

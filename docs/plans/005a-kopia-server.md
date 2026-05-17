@@ -6,15 +6,23 @@ Deploy centralized backup infrastructure using [Kopia](https://kopia.io/) — a 
 
 ### Scope
 
-| Component | Role |
-|-----------|------|
-| Backup server | Kopia repository on lab1 (primary) or lab2 (fallback) |
+**Status:** Done (except off-site replication — future plans)
+
+| Component | Status |
+|-----------|--------|
+| Docker container + repo init | Done |
+| TLS + admin/control credentials | Done |
+| Traefik routing (dynamic config) | Done |
+| Global policy (compression, retention, parallelism) | Done |
+| Maintenance owner | Done (`admin@server`) |
+| Verify timers (daily 5%, monthly 100%) | Done |
+| Off-site replication (sync-to) | Planned — two follow-up plans (local mirror + USB udev trigger) |
 
 ## Affected files
 
 | File | Change |
 |------|--------|
-| `playbooks/roles/kopia_server/` | New — repository server role |
+| `playbooks/roles/infra/kopia_server/` | New — repository server role |
 | `inventory/group_vars/servers.yml` | Kopia server vars (repo path, credentials) |
 | `inventory/hosts.yml` | Add `kopia_server_hosts` group |
 | `vault/secrets.yml` | Server admin credentials, repo encryption key |
@@ -57,11 +65,11 @@ Verification uses the admin repository connection (full access to all snapshots 
 - Initialize encrypted repository on local storage (mirror array)
 - Configure TLS certificate generation
 - Set admin credentials from vault (.env file, mode 0600)
-- Deploy via `playbooks/roles/kopia_server/tasks/main.yml`
+- Deploy via `playbooks/roles/infra/kopia_server/tasks/main.yml`
 
 ### Step 2: Set maintenance ownership
 
-- Designate first agent identity (e.g. `stepca@server`) or admin user as Maintenance Owner
+- Designate first agent identity or admin user as Maintenance Owner (default: `admin@server`)
 - Run `kopia maintenance set --owner=<user@hostname>` via delegate_to after initial deployment
 - Verify with `kopia maintenance info`
 
@@ -88,7 +96,7 @@ Verification uses the admin repository connection (full access to all snapshots 
 | Keep annual | `3` | `3` | `--keep-annual=3` | 3 years of annual snapshots — Kopia default is fine (tunable) |
 | Ignore identical snapshots | `false` | `true` | `--ignore-identical-snapshots=true` | Skips byte-identical backups — saves space, keeps retention history clean |
 
-All tunables live in `playbooks/roles/services/kopia_server/defaults/main.yml`, override in `group_vars/servers.yml` if needed.
+All tunables live in `playbooks/roles/infra/kopia_server/defaults/main.yml`, override in `group_vars/servers.yml` if needed.
 
 Applied via admin credentials during deployment:
 ```bash

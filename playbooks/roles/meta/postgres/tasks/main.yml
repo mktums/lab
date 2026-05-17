@@ -3,4 +3,5 @@
   block:
     - ansible.builtin.include_tasks: deploy.yml
     - ansible.builtin.include_tasks: cname.yml
+    - ansible.builtin.include_tasks: backup.yml
   when: inventory_hostname in groups.get('postgres_hosts', [])

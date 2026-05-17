@@ -29,7 +29,7 @@
       tags: [docker]
       when: inventory_hostname in groups.get('docker_hosts', [])
 
-    # CA + reverse proxy chain (step_ca → traefik via meta dep)
+    # CA + reverse proxy chain
     - role: step_ca
       tags: [step_ca]
       when: inventory_hostname in groups.get('step_ca_hosts', [])
@@ -50,6 +50,15 @@
     - role: traefik
       tags: [traefik]
       when: inventory_hostname in groups.get('traefik_hosts', [])
+
+    # Kopia (server behind traefik, agent before services that depend on it)
+    - role: kopia_server
+      tags: [kopia, kopia_server]
+      when: inventory_hostname in groups.get('kopia_server_hosts', [])
+
+    - role: kopia_agent
+      tags: [kopia, kopia_agent]
+      when: inventory_hostname in groups.get('kopia_agent_hosts', [])
 
     # Beszel (hub + agents split into separate roles)
     - role: beszel_hub
@@ -83,7 +92,3 @@
     - role: linkwarden
       tags: [linkwarden]
       when: inventory_hostname in groups.get('linkwarden_hosts', [])
-
-    - role: kopia_server
-      tags: [kopia]
-      when: inventory_hostname in groups.get('kopia_server_hosts', [])

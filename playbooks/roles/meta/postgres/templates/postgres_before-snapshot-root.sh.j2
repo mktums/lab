@@ -1,0 +1,22 @@
+#!/bin/sh
+set -e
+
+# pg_dump before-snapshot-root action for Kopia
+# Dumps globals (roles, tablespaces) + per-database into the directory that kopia snapshots
+
+DUMP_DIR="{{ postgres_data_dir }}/backups"
+COMPOSE_DIR={{ postgres_opt_dir }}
+PG_USER={{ postgres_user | default('postgres') }}
+
+mkdir -p "$DUMP_DIR"
+rm -f "$DUMP_DIR"/dump-*.sql  # clear stale dumps from previous runs
+cd "$COMPOSE_DIR"
+
+# Global objects (roles, tablespaces)
+docker compose exec -T postgres pg_dumpall -U "$PG_USER" -g > "$DUMP_DIR/dump-globals.sql"
+
+# Per-database dumps
+db_list=$(docker compose exec -T postgres psql -U "$PG_USER" -t -c "SELECT datname FROM pg_database WHERE datistemplate = false")
+for db in $db_list; do
+  docker compose exec -T postgres pg_dump -U "$PG_USER" "$db" > "$DUMP_DIR/dump-${db}.sql"
+done

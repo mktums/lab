@@ -1,0 +1,18 @@
+# Postgres Kopia backup configuration
+
+# Kopia identity (override_username @ override_hostname)
+kopia_override_username: postgres
+kopia_override_hostname: server
+
+kopia_sources:
+  "{{ postgres_data_dir }}/backups":
+    retention:
+      keep_latest: 10
+      keep_hourly: 48
+      keep_daily: 7
+      keep_weekly: 4
+      keep_monthly: 24
+      keep_annual: 3
+
+# before-snapshot-root action: dumps database once per snapshot to hardcoded path
+kopia_before_snapshot_root_action_path: "templates/postgres_before-snapshot-root.sh.j2"

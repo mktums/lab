@@ -1,0 +1,14 @@
+[Unit]
+Description=Kopia backup for %I
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+ExecStartPre=/usr/bin/nc -z -w 3 {{ kopia_cname }}.{{ lan_domain }} 443
+Type=oneshot
+EnvironmentFile=-{{ kopia_agent_config_dir }}/%I.env
+Environment=KOPIA_CACHE_DIR={{ kopia_cache_base }}/%I
+ExecStart=/usr/bin/kopia snapshot create --all --config-file {{ kopia_agent_config_dir }}/%I.config
+
+[Install]
+WantedBy=multi-user.target

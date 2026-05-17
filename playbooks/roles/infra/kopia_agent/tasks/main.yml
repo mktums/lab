@@ -1,0 +1,4 @@
+---
+# Kopia agent host-level setup
+
+- ansible.builtin.include_tasks: deploy.yml
