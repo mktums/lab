@@ -101,7 +101,7 @@ Alternative if `depends_on` causes issues: use `restart: on-failure` instead of 
 
 ```bash
 # Hub
-ansible-playbook playbooks/servers.yml --tags beszel --check
+ansible-playbook playbooks/servers.yml --tags beszel_hub,beszel_agent --check
 curl -s http://beszel.lan_domain:{{ beszel_port }}/health  # or equivalent endpoint
 
 # Agent (after hub migration)

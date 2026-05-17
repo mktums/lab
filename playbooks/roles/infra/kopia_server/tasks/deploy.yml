@@ -79,15 +79,15 @@
     docker compose exec kopia-server kopia policy set --global \
       --compression=zstd \
       --add-never-compress=mp4,mkv,avi,iso,zip,gz,xz,tar.gz,7z,rar \
-      --max-parallel-file-reads={{ kopia_global_max_parallel_file_reads }} \
-      --max-parallel-snapshots={{ kopia_global_max_parallel_snapshots }} \
+      --max-parallel-file-reads={{ kopia_global_parallelism.max_file_reads }} \
+      --max-parallel-snapshots={{ kopia_global_parallelism.max_snapshots }} \
       --ignore-cache-dirs=true \
-      --keep-latest={{ kopia_retention_keep_latest }} \
-      --keep-hourly={{ kopia_retention_keep_hourly }} \
-      --keep-daily={{ kopia_retention_keep_daily }} \
-      --keep-weekly={{ kopia_retention_keep_weekly }} \
-      --keep-monthly={{ kopia_retention_keep_monthly }} \
-      --keep-annual={{ kopia_retention_keep_annual }} \
+      --keep-latest={{ kopia_global_retention.keep_latest }} \
+      --keep-hourly={{ kopia_global_retention.keep_hourly }} \
+      --keep-daily={{ kopia_global_retention.keep_daily }} \
+      --keep-weekly={{ kopia_global_retention.keep_weekly }} \
+      --keep-monthly={{ kopia_global_retention.keep_monthly }} \
+      --keep-annual={{ kopia_global_retention.keep_annual }} \
       --ignore-identical-snapshots=true
   args:
     chdir: "{{ kopia_opt_dir }}"

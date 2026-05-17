@@ -1,4 +1,13 @@
 ---
-# Kopia agent host-level setup
+# Kopia agent — deploys base infrastructure, then iterates over backup_sources from inventory
 
-- ansible.builtin.include_tasks: deploy.yml
+- name: Deploy Kopia agent base (install binary, systemd templates)
+  ansible.builtin.include_tasks: deploy.yml
+  when: backup_sources | length > 0
+
+- name: Register all backup sources for this host
+  loop: "{{ backup_sources | dict2items }}"
+  loop_control:
+    loop_var: source_def
+    label: "kopia-backup@{{ source_def.key }}"
+  ansible.builtin.include_tasks: register_source.yml

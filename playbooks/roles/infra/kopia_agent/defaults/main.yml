@@ -11,7 +11,9 @@ kopia_server_url: "https://{{ kopia_cname }}.{{ lan_domain }}:443"
 kopia_agent_config_dir: "{{ ansible_opt_base }}/kopia/agents"
 kopia_cache_base: "{{ ansible_opt_base }}/kopia/cache"
 
-# Retention defaults (identity-level, shared with kopia_server role)
+# Backup sources declared in host_vars, keyed by service name.
+# Each entry defines a separate Kopia identity with its own timer and retention.
+backup_sources: {}
 
 # Timer defaults (override per-service via kopia_timer_calendar)
 kopia_timer_on_calendar: "hourly"

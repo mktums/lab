@@ -1,3 +1,8 @@
+> **⚠️ Superseded by [011](./011-centralize-kopia-backups.md).**
+> The per-service `defaults/backup.yml` + `tasks/backup.yml` pattern described here
+> has been replaced with inventory-driven declarations in host_vars. Backup orchestration
+> now lives entirely in the kopia_agent role — see [adding-backup.md](../kopia/adding-backup.md).
+
 # 005c: Kopia service backups (postgres, vaultwarden, linkwarden)
 
 ## Motivation

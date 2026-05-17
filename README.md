@@ -158,7 +158,7 @@ Do this once per device. After this, all `*.lan` HTTPS services will show a gree
 >
 > 1. Settings → Tokens → create a token → add to `vault_beszel_token`
 > 2. Add System → copy the public key → add to `vault_beszel_hub_key`
-> 3. Re-run `ansible-playbook playbooks/servers.yml --tags beszel` to deploy agents
+> 3. Re-run `ansible-playbook playbooks/servers.yml --tags beszel_hub,beszel_agent` to deploy agents
 >
 > **S.M.A.R.T. monitoring**: The Beszel agent is configured with S.M.A.R.T. device mappings and capabilities (`SYS_RAWIO`, `SYS_ADMIN`) for disk health monitoring. Additional filesystems can be monitored by adding extra volume mounts in `inventory/host_vars/<host>.yml`:
 > ```yaml
@@ -280,7 +280,7 @@ ansible-playbook playbooks/docker.yml
 
 # Single services (via tags)
 ansible-playbook playbooks/servers.yml --tags postgres
-ansible-playbook playbooks/servers.yml --tags beszel
+ansible-playbook playbooks/servers.yml --tags beszel_hub,beszel_agent
 ansible-playbook playbooks/servers.yml --tags portainer
 ansible-playbook playbooks/servers.yml --tags vaultwarden
 ansible-playbook playbooks/servers.yml --tags qbittorrent

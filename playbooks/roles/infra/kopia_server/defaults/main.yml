@@ -20,14 +20,5 @@ kopia_cname: "kopia"
 # Maintenance owner user@hostname (first agent identity or admin)
 kopia_maintenance_owner: "admin@server"
 
-# Global policy defaults (applied once during deployment, idempotent via changed_when:false)
-kopia_global_max_parallel_file_reads: 8   # Conservative for 16GB RAM with concurrent backups
-kopia_global_max_parallel_snapshots: 4    # Staggered service backups without saturating mirror I/O
-
-# Global retention defaults (inherited by all sources, override per-source in register_source.yml)
-kopia_retention_keep_latest: 10           # Most recent snapshots always kept
-kopia_retention_keep_hourly: 48           # Last 48 hourly snapshots (2 days)
-kopia_retention_keep_daily: 7             # Last 7 daily snapshots (1 week)
-kopia_retention_keep_weekly: 4            # Last 4 weekly snapshots (1 month)
-kopia_retention_keep_monthly: 24          # Last 24 monthly snapshots (2 years)
-kopia_retention_keep_annual: 3            # Last 3 annual snapshots
+# Global policy defaults — moved to inventory/group_vars/servers.yml
+# kopia_global_retention, kopia_global_parallelism

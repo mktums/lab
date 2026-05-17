@@ -1,21 +1,30 @@
 ---
 # deploy.yml — host-level Kopia agent setup (run once per host)
 
+- name: Check installed Kopia version
+  ansible.builtin.command: dpkg-query -W -f='${Version}' kopia
+  register: kopia_installed_version
+  changed_when: false
+  failed_when: false
+
 - name: Download Kopia .deb from GitHub releases
   ansible.builtin.get_url:
     url: "https://github.com/kopia/kopia/releases/download/v{{ kopia_version }}/kopia_{{ kopia_version }}_linux_amd64.deb"
     dest: "/tmp/kopia_{{ kopia_version }}_amd64.deb"
     mode: "0644"
+  when: kopia_installed_version.stdout != kopia_version
 
 - name: Install Kopia .deb package
   ansible.builtin.apt:
     deb: "/tmp/kopia_{{ kopia_version }}_amd64.deb"
     state: present
+  when: kopia_installed_version.stdout != kopia_version
 
 - name: Remove downloaded .deb file
   ansible.builtin.file:
     path: "/tmp/kopia_{{ kopia_version }}_amd64.deb"
     state: absent
+  when: kopia_installed_version.stdout != kopia_version
 
 - name: Ensure Kopia directories exist
   ansible.builtin.file:

@@ -1,131 +1,183 @@
 # Adding Kopia Backup to a Service
 
-## Quick start (3 files)
+## Quick start (1 file + inventory entry)
 
-### 1. `defaults/backup.yml` — declare sources and retention
+All backup orchestration lives in the `kopia_agent` role, driven by inventory declarations. No service role changes needed.
 
-```yaml
-# Identity on the Kopia server
-kopia_override_username: <service_name>
-kopia_override_hostname: server
+### 1. Add source declaration to host_vars
 
-# Per-source paths + retention (override global defaults selectively)
-kopia_sources:
-  "<path_to_backup>":
-    retention:
-      keep_latest: 10   # omit to inherit from global policy
-      keep_daily: 7
-      keep_monthly: 24
-
-# Optional — before/after snapshot-root action (inherited by all sources)
-# kopia_before_snapshot_root_action_path: "templates/<svc>_before-snapshot-root.sh.j2"
-```
-
-### 2. `tasks/backup.yml` — include registration
+Edit `inventory/host_vars/<host>.yml`:
 
 ```yaml
----
-- name: Include Kopia backup defaults
-  ansible.builtin.include_vars: "{{ role_path }}/defaults/backup.yml"
-
-- name: Register Kopia backup source
-  ansible.builtin.include_role:
-    name: kopia_agent
-    tasks_from: register_source
+backup_sources:
+  myservicename:
+    hostname: server
+    paths:
+      "/srv/docker_data/my-service":
+        retention:
+          keep_latest: 10
+          keep_daily: 30
+          keep_monthly: 12
 ```
 
-### 3. `tasks/main.yml` — include after deployment
+### 2. Add action script template (if needed)
 
-Add after the service's deploy block:
+If the service needs preparation before snapshot (database dump, cache flush, etc.), create a template in `kopia_agent/templates/actions/<service>/`:
 
-```yaml
-- ansible.builtin.include_tasks: backup.yml
+```bash
+mkdir -p playbooks/roles/infra/kopia_agent/templates/actions/myservicename/
 ```
 
-## Reference
-
-### Source structure
-
-Each key in `kopia_sources` is a directory path that kopia snapshots. Retention settings are per-source — omit any `keep_*` to inherit from global policy (set by kopia_server role). Folder-level actions can be added per source.
-
-```yaml
-kopia_sources:
-  "/srv/docker_data/my-service":          # simple file backup
-    retention:
-      keep_latest: 10
-      keep_daily: 30
-  "/opt/ansible/my-service/backups":      # dump/dir output from pre-action script
-    retention:
-      keep_latest: 5
-      keep_monthly: 12
-  "/srv/docker_data/archive-store":       # folder actions for dedup optimization
-    retention:
-      keep_daily: 30
-    before_folder_action_path: "templates/unarchive.sh.j2"
-    after_folder_action_path: "templates/rearchive.sh.j2"
-```
-
-### Action types
-
-| Type | Scope | Inherited? | Defined where |
-|------|-------|------------|---------------|
-| `before-snapshot-root` | Once per snapshot | Yes (→ all sources) | Identity level (`kopia_before_snapshot_root_action_path`) |
-| `after-snapshot-root` | Once per snapshot | Yes (→ all sources) | Identity level (`kopia_after_snapshot_root_action_path`) |
-| `before-folder` | Per directory | **No** | Per-source (`before_folder_action_path` inside source entry) |
-| `after-folder` | Per directory | **No** | Per-source (`after_folder_action_path` inside source entry) |
-
-Snapshot-root actions are defined at the identity level and inherited by all sources. Folder actions must be set per-source path — useful for unarchiving before snapshot (dedup on individual files), then re-archiving after.
-
-### Action script template
-
-Jinja2 template deployed to `/opt/ansible/kopia/agents/<username>_before-snapshot-root.sh`:
+Create `playbooks/roles/infra/kopia_agent/templates/actions/myservicename/before-snapshot-root.sh.j2`:
 
 ```sh
 #!/bin/sh
 set -e
 
+# Script runs before each snapshot. Ansible vars available through normal precedence.
 DUMP_DIR="/srv/docker_data/my-service/backups"
 mkdir -p "$DUMP_DIR"
-
-# Dump data into the source directory kopia will snapshot
 cd /opt/ansible/my-service && docker compose exec -T myapp dump > "$DUMP_DIR/dump.sql"
 ```
 
-Script receives these environment variables from kopia:
+Then enable the action in inventory:
 
-| Variable | Value |
-|----------|-------|
-| `KOPIA_ACTION` | `before-snapshot-root` or `after-snapshot-root` |
-| `KOPIA_SOURCE_PATH` | Path being snapshotted |
-| `KOPIA_SNAPSHOT_ID` | Unique snapshot ID |
+```yaml
+backup_sources:
+  myservicename:
+    hostname: server
+    paths:
+      "/srv/docker_data/my-service": {}
+    actions:
+      before-snapshot-root: true   # → templates/actions/myservicename/before-snapshot-root.sh.j2
+```
+
+### 3. Re-run kopia roles
+
+```bash
+ansible-playbook playbooks/servers.yml --tags kopia_server,kopia_agent --limit <host>
+```
+
+The `kopia_agent` meta dependency on `kopia_server` ensures server runs first. The agent role iterates over `backup_sources` and registers everything automatically: provisions user, connects agent, deploys action scripts, sets retention, seeds first snapshot, starts systemd timer. No service role changes needed.
+
+---
+
+## Reference
+
+### Inventory schema
+
+```yaml
+backup_sources:
+  <service_name>:          # Kopia override_username (identity)
+    hostname: server       # Kopia override_hostname suffix
+    paths:                 # Dict of path → config
+      "/path/to/backup":
+        retention:         # Optional — omit to use global Kopia policy
+          keep_latest: 10
+          keep_daily: 30
+        before-folder: true   # Folder action (per-path, NOT inherited)
+        after-folder: true    # → templates/actions/<service>/after-folder.sh.j2
+    actions:               # Snapshot-root actions (inherited by all paths)
+      before-snapshot-root: true
+      # after-snapshot-root: true
+    enabled: true          # Optional — set to false to pause timer without losing config
+    schedule: "hourly"     # Optional — systemd OnCalendar expression
+```
+
+### Action types and resolution
+
+| Type | Scope | Inherited? | Template resolved to |
+|------|-------|------------|---------------------|
+| `before-snapshot-root` | Once per snapshot | Yes (→ all paths) | `actions/<service>/before-snapshot-root.sh.j2` |
+| `after-snapshot-root` | Once per snapshot | Yes (→ all paths) | `actions/<service>/after-snapshot-root.sh.j2` |
+| `before-folder` | Per directory | **No** | `actions/<service>/before-folder.sh.j2` |
+| `after-folder` | Per directory | **No** | `actions/<service>/after-folder.sh.j2` |
+
+Snapshot-root actions are set once and inherited by all paths under the identity. Folder actions must be declared per-path inside the `paths` dict — Kopia does not inherit them from parent directories.
+
+### Retention hierarchy
+
+1. **Per-path** — `paths.<path>.retention.*` (most specific)
+2. **Global Kopia server policy** — `kopia_global_retention` in `group_vars/servers.yml` (fallback)
+
+Omit per-path retention entirely to use global policy:
+
+```yaml
+backup_sources:
+  step_ca:
+    hostname: server
+    paths:
+      "{{ step_ca_data_dir }}/certs": {}   # no retention → inherits from global policy
+```
+
+### Pausing a backup (enabled flag)
+
+Set `enabled: false` at source level to stop the timer:
+
+```yaml
+backup_sources:
+  postgres:
+    hostname: server
+    enabled: false   # ← timer stopped for all paths under this identity
+    paths:
+      "{{ postgres_data_dir }}/backups":
+        retention:
+          keep_latest: 10
+```
+
+Or at path level to disable individual directories (timer still runs, but skips disabled paths):
+
+```yaml
+backup_sources:
+  archive-store:
+    hostname: server
+    paths:
+      "/srv/docker_data/archive-store":
+        retention:
+          keep_daily: 30
+      "/mnt/temp/staging-data":
+        enabled: false   # ← this path skipped, timer still runs for other paths
+```
+
+Re-run with `--tags kopia_server,kopia_agent` — disabled paths are skipped (no policy set, no actions deployed, no snapshots). Flip back to `true` (or remove key) to resume. All Kopia config and existing snapshots remain intact.
+
+### Timer schedule
+
+Default: `hourly` with 300s random delay. Override per-service via `schedule`:
+
+```yaml
+backup_sources:
+  vaultwarden:
+    hostname: server
+    paths:
+      "/srv/docker_data/vaultwarden": {}
+    schedule: "daily"   # daily instead of hourly
+```
 
 ### Secrets in actions
 
 Never pass passwords as environment variables (kopia logs action commands). Use credential files:
 
 - **PostgreSQL**: `.pgpass` file deployed via Ansible template (`mode: 0600`)
-- **API tokens**: `EnvironmentFile=` in systemd service (loaded from `.env` if `kopia_pre_action_env` is defined)
+- **API tokens**: `EnvironmentFile=` in systemd service (loaded from `.env` if `pre_action_env` is defined)
 
-### Timer schedule
+### Environment variables passed by Kopia
 
-Default: hourly with 300s random delay. Override per-service by setting `kopia_timer_on_calendar` before including register_source:
+Action scripts receive these variables at runtime:
 
-```yaml
-- name: Register Kopia backup source
-  ansible.builtin.include_role:
-    name: kopia_agent
-    tasks_from: register_source
-  vars:
-    kopia_override_username: myservice
-    kopia_override_hostname: server
-    kopia_timer_on_calendar: "daily"      # daily instead of hourly
-```
+| Variable | Value |
+|----------|-------|
+| `KOPIA_ACTION` | `before-folder`, `after-folder`, `before-snapshot-root`, or `after-snapshot-root` |
+| `KOPIA_SOURCE_PATH` | Path being snapshotted |
+| `KOPIA_SNAPSHOT_ID` | Unique snapshot ID (64-bit number) |
+
+---
 
 ## Deploy and verify
 
 ```bash
-# Deploy single service (includes backup)
-ansible-playbook playbooks/servers.yml --tags <service_name>
+# Run kopia roles for a specific host
+ansible-playbook playbooks/servers.yml --tags kopia_server,kopia_agent --limit lab1
 
 # Verify snapshots on the host
 ssh lab1 "kopia snapshot list --config-file /opt/ansible/kopia/agents/<username>.config"

@@ -1,12 +1,8 @@
 ---
 # register_source.yml — idempotent Kopia source registration per service
-# Included via: include_role: name=kopia_agent tasks_from=register_source
-# Required vars from caller: kopia_override_username, kopia_override_hostname
-# Optional vars:
-#   kopia_sources: dict of path → { retention: {...}, before_folder_action_path, after_folder_action_path }
-#   kopia_pre_action_env: dict of env vars (deployed as .env file)
-#   kopia_before_snapshot_root_action_path: template path (inherited by all sources)
-#   kopia_after_snapshot_root_action_path: template path (inherited by all sources)
+# Included via loop from main.yml. Loop variable: source_def
+#   source_def.key    = service name / override_username
+#   source_def.value  = config dict { hostname, paths, actions, schedule }
 
 - name: Ensure Kopia agent directories exist
   ansible.builtin.file:
@@ -38,156 +34,170 @@
 
 - name: Provision user on Kopia server (skip if exists)
   ansible.builtin.shell: >-
-    docker compose exec -T kopia-server kopia server users add {{ kopia_override_username }}@{{ kopia_override_hostname }} --user-password='{{ kopia_repo_password }}'
+    docker compose exec -T kopia-server kopia server users add {{ source_def.key }}@{{ source_def.value.hostname }} --user-password='{{ kopia_repo_password }}'
   args:
     chdir: "{{ kopia_opt_dir }}"
   delegate_to: "{{ kopia_server_host }}"
   changed_when: false
   no_log: true
-  when: (kopia_override_username + '@' + kopia_override_hostname) not in kopia_users_list.stdout
+  when: (source_def.key + '@' + source_def.value.hostname) not in kopia_users_list.stdout
 
 - name: Check if agent config exists
   ansible.builtin.stat:
-    path: "{{ kopia_agent_config_dir }}/{{ kopia_override_username }}.config"
+    path: "{{ kopia_agent_config_dir }}/{{ source_def.key }}.config"
   register: kopia_config_stat
 
 - name: Connect Kopia agent with override identity (first run only)
   ansible.builtin.shell: |
     /usr/bin/kopia repository connect server \
-      --config-file={{ kopia_agent_config_dir }}/{{ kopia_override_username }}.config \
+      --config-file={{ kopia_agent_config_dir }}/{{ source_def.key }}.config \
       --url={{ kopia_server_url }} \
       --enable-actions \
       --password='{{ kopia_repo_password }}' \
-      --override-username={{ kopia_override_username }} \
-      --override-hostname={{ kopia_override_hostname }}
+      --override-username={{ source_def.key }} \
+      --override-hostname={{ source_def.value.hostname }}
   when: not kopia_config_stat.stat.exists
 
-# --- Per-source retention ---
-
-- name: Set per-source retention policy
-  ansible.builtin.shell: >-
-    /usr/bin/kopia policy set {{ item.key }}
-    {{ '--config-file=' ~ kopia_agent_config_dir ~ '/' ~ kopia_override_username ~ '.config' }}
-    {{ '--keep-latest=' ~ item.value.retention.keep_latest | default(omit) }}
-    {{ '--keep-hourly=' ~ item.value.retention.keep_hourly | default(omit) }}
-    {{ '--keep-daily=' ~ item.value.retention.keep_daily | default(omit) }}
-    {{ '--keep-weekly=' ~ item.value.retention.keep_weekly | default(omit) }}
-    {{ '--keep-monthly=' ~ item.value.retention.keep_monthly | default(omit) }}
-    {{ '--keep-annual=' ~ item.value.retention.keep_annual | default(omit) }}
-  loop: "{{ kopia_sources | dict2items }}"
-  changed_when: false
-  when: kopia_sources is defined and kopia_sources | length > 0
-
-# --- Pre-action .env file ---
+# --- Pre-action .env file (if defined in inventory) ---
 
 - name: Deploy pre-action .env file (if defined)
   ansible.builtin.template:
     src: kopia_agent.env.j2
-    dest: "{{ kopia_agent_config_dir }}/{{ kopia_override_username }}.env"
+    dest: "{{ kopia_agent_config_dir }}/{{ source_def.key }}.env"
     mode: "0644"
-  when: kopia_pre_action_env is defined and kopia_pre_action_env | length > 0
+  when: source_def.value.pre_action_env is defined and source_def.value.pre_action_env | length > 0
 
-# --- Folder-level action scripts (per-source, NOT inherited) ---
+# --- Per-path configuration ---
+# Disabled paths: clear Kopia policy only if timer was previously active (previously enabled)
+# Enabled paths: set retention and deploy actions
 
-- name: Deploy before-folder action script per source (if defined)
-  ansible.builtin.template:
-    src: "{{ item.value.before_folder_action_path }}"
-    dest: "{{ kopia_agent_config_dir }}/{{ kopia_override_username }}_before-folder_{{ item.key | hash('md5')[:8] }}.sh"
-    mode: "0755"
-  loop: "{{ kopia_sources | dict2items }}"
-  when: item.value.before_folder_action_path is defined
+- name: Check if backup timer exists for disabled sources
+  ansible.builtin.command: systemctl list-unit-files --type=timer --no-legend
+  register: kopia_timer_list
+  changed_when: false
+  when: not (source_def.value.enabled | default(true))
 
-- name: Deploy after-folder action script per source (if defined)
-  ansible.builtin.template:
-    src: "{{ item.value.after_folder_action_path }}"
-    dest: "{{ kopia_agent_config_dir }}/{{ kopia_override_username }}_after-folder_{{ item.key | hash('md5')[:8] }}.sh"
-    mode: "0755"
-  loop: "{{ kopia_sources | dict2items }}"
-  when: item.value.after_folder_action_path is defined
-
-- name: Register folder-level actions in Kopia policy (per-source, if defined)
+- name: Clear Kopia policy for disabled paths that were previously enabled
   ansible.builtin.shell: >-
-    /usr/bin/kopia policy set {{ item.key }}
-    {{ '--config-file=' ~ kopia_agent_config_dir ~ '/' ~ kopia_override_username ~ '.config' }}
-    {% if item.value.before_folder_action_path is defined %}
-    --before-folder-action={{ kopia_agent_config_dir }}/{{ kopia_override_username }}_before-folder_{{ item.key | hash('md5')[:8] }}.sh
-    {% endif %}
-    {% if item.value.after_folder_action_path is defined %}
-    --after-folder-action={{ kopia_agent_config_dir }}/{{ kopia_override_username }}_after-folder_{{ item.key | hash('md5')[:8] }}.sh
-    {% endif %}
-  loop: "{{ kopia_sources | dict2items }}"
+    /usr/bin/kopia policy set {{ item.key }} --clear \
+      --config-file={{ kopia_agent_config_dir }}/{{ source_def.key }}.config
+  loop: "{{ source_def.value.paths | dict2items }}"
   changed_when: false
   when:
-    - (item.value.before_folder_action_path is defined) or (item.value.after_folder_action_path is defined)
-    - kopia_sources is defined and kopia_sources | length > 0
+    - not (source_def.value.enabled | default(true))
+    - "'kopia-backup@{{ source_def.key }}.timer' in kopia_timer_list.stdout"
 
-# --- Snapshot-root action scripts (inherited by all sources) ---
+- name: Set per-source retention policy
+  ansible.builtin.shell: >-
+    /usr/bin/kopia policy set {{ item.key }}
+    {{ '--config-file=' ~ kopia_agent_config_dir ~ '/' ~ source_def.key ~ '.config' }}
+    {% if item.value.retention is defined %}{{ ' --keep-latest=' ~ item.value.retention.keep_latest | default(omit) }}{% endif %}
+    {% if item.value.retention is defined %}{{ ' --keep-hourly=' ~ item.value.retention.keep_hourly | default(omit) }}{% endif %}
+    {% if item.value.retention is defined %}{{ ' --keep-daily=' ~ item.value.retention.keep_daily | default(omit) }}{% endif %}
+    {% if item.value.retention is defined %}{{ ' --keep-weekly=' ~ item.value.retention.keep_weekly | default(omit) }}{% endif %}
+    {% if item.value.retention is defined %}{{ ' --keep-monthly=' ~ item.value.retention.keep_monthly | default(omit) }}{% endif %}
+    {% if item.value.retention is defined %}{{ ' --keep-annual=' ~ item.value.retention.keep_annual | default(omit) }}{% endif %}
+  loop: "{{ source_def.value.paths | dict2items }}"
+  changed_when: false
+  when: item.value.enabled | default(true)
 
-- name: Deploy before-snapshot-root action script (if defined)
+# --- Snapshot-root action scripts (inherited by all enabled paths, convention-based resolution) ---
+
+- name: Deploy before-snapshot-root action script (if enabled)
   ansible.builtin.template:
-    src: "{{ kopia_before_snapshot_root_action_path }}"
-    dest: "{{ kopia_agent_config_dir }}/{{ kopia_override_username }}_before-snapshot-root.sh"
+    src: "actions/{{ source_def.key }}/before-snapshot-root.sh.j2"
+    dest: "{{ kopia_agent_config_dir }}/{{ source_def.key }}_before-snapshot-root.sh"
     mode: "0755"
-  when: kopia_before_snapshot_root_action_path is defined
+  when: (source_def.value.actions | default({})).get('before-snapshot-root', false)
 
-- name: Deploy after-snapshot-root action script (if defined)
+- name: Deploy after-snapshot-root action script (if enabled)
   ansible.builtin.template:
-    src: "{{ kopia_after_snapshot_root_action_path }}"
-    dest: "{{ kopia_agent_config_dir }}/{{ kopia_override_username }}_after-snapshot-root.sh"
+    src: "actions/{{ source_def.key }}/after-snapshot-root.sh.j2"
+    dest: "{{ kopia_agent_config_dir }}/{{ source_def.key }}_after-snapshot-root.sh"
     mode: "0755"
-  when: kopia_after_snapshot_root_action_path is defined
+  when: (source_def.value.actions | default({})).get('after-snapshot-root', false)
 
 - name: Register snapshot-root actions in Kopia policy (if defined)
   ansible.builtin.shell: >-
     /usr/bin/kopia policy set {{ item.key }}
-    {{ '--config-file=' ~ kopia_agent_config_dir ~ '/' ~ kopia_override_username ~ '.config' }}
-    {% if kopia_before_snapshot_root_action_path is defined %}
-    --before-snapshot-root-action={{ kopia_agent_config_dir }}/{{ kopia_override_username }}_before-snapshot-root.sh
-    {% endif %}
-    {% if kopia_after_snapshot_root_action_path is defined %}
-    --after-snapshot-root-action={{ kopia_agent_config_dir }}/{{ kopia_override_username }}_after-snapshot-root.sh
-    {% endif %}
-  loop: "{{ kopia_sources | dict2items }}"
+    {{ '--config-file=' ~ kopia_agent_config_dir ~ '/' ~ source_def.key ~ '.config' }}
+    {% if (source_def.value.actions | default({})).get('before-snapshot-root', false) %}{{ ' --before-snapshot-root-action=' ~ kopia_agent_config_dir ~ '/' ~ source_def.key ~ '_before-snapshot-root.sh' }}{% endif %}
+    {% if (source_def.value.actions | default({})).get('after-snapshot-root', false) %}{{ ' --after-snapshot-root-action=' ~ kopia_agent_config_dir ~ '/' ~ source_def.key ~ '_after-snapshot-root.sh' }}{% endif %}
+  loop: "{{ source_def.value.paths | dict2items }}"
+  changed_when: false
+  when: item.value.enabled | default(true)
+
+# --- Folder-level action scripts (per-path, NOT inherited by Kopia) ---
+
+- name: Deploy folder-level action scripts (if defined)
+  ansible.builtin.template:
+    src: "actions/{{ source_def.key }}/{{ item.value._action_type }}.sh.j2"
+    dest: "{{ kopia_agent_config_dir }}/{{ source_def.key }}_{{ item.value._action_type }}_{{ item.key | hash('md5')[:8] }}.sh"
+    mode: "0755"
+  loop: >-
+    {{ source_def.value.folder_actions | default({}) | dict2items }}
+  when:
+    - source_def.value.folder_actions is defined and source_def.value.folder_actions | length > 0
+    - item.value.enabled | default(true)
+
+- name: Register folder-level actions in Kopia policy (per-path, if defined)
+  ansible.builtin.shell: >-
+    /usr/bin/kopia policy set {{ item.key }}
+    {{ '--config-file=' ~ kopia_agent_config_dir ~ '/' ~ source_def.key ~ '.config' }}
+    {% if 'before-folder' in item.value %}{{ ' --before-folder-action=' ~ kopia_agent_config_dir ~ '/' ~ source_def.key ~ '_before-folder_' ~ item.key | hash('md5')[:8] ~ '.sh' }}{% endif %}
+    {% if 'after-folder' in item.value %}{{ ' --after-folder-action=' ~ kopia_agent_config_dir ~ '/' ~ source_def.key ~ '_after-folder_' ~ item.key | hash('md5')[:8] ~ '.sh' }}{% endif %}
+  loop: >-
+    {{ source_def.value.folder_actions | default({}) | dict2items }}
   changed_when: false
   when:
-    - (kopia_before_snapshot_root_action_path is defined) or (kopia_after_snapshot_root_action_path is defined)
-    - kopia_sources is defined and kopia_sources | length > 0
+    - source_def.value.folder_actions is defined and source_def.value.folder_actions | length > 0
+    - item.value.enabled | default(true)
 
-# --- Start timer ---
-
-- name: Reload systemd (pick up template changes)
-  ansible.builtin.systemd:
-    daemon_reload: true
+# --- Ensure backup directories exist ---
 
 - name: Ensure backup source directories exist
   ansible.builtin.file:
     path: "{{ item.key }}"
     state: directory
     mode: "0700"
-  loop: "{{ kopia_sources | dict2items }}"
-  when: kopia_sources is defined and kopia_sources | length > 0
+  loop: "{{ source_def.value.paths | dict2items }}"
+  when: item.value.enabled | default(true)
 
-# --- Seed snapshots (only if source has none) ---
+# --- Seed snapshots (only if none exist) ---
 
-- name: Check if snapshots exist per source (seed guard)
+- name: Check if snapshots exist per path
   ansible.builtin.shell: |
     /usr/bin/kopia snapshot list {{ item.key }} \
-      --config-file={{ kopia_agent_config_dir }}/{{ kopia_override_username }}.config
-  loop: "{{ kopia_sources | dict2items }}"
+      --config-file={{ kopia_agent_config_dir }}/{{ source_def.key }}.config
+  loop: "{{ source_def.value.paths | dict2items }}"
   register: kopia_seed_check
   changed_when: false
-  when: kopia_sources is defined and kopia_sources | length > 0
+  when: item.value.enabled | default(true)
 
-- name: Create first snapshot (seed sources for --all)
+- name: Create first snapshot (seed paths with no snapshots)
   ansible.builtin.shell: |
     /usr/bin/kopia snapshot create {{ item.item.key }} \
-      --config-file={{ kopia_agent_config_dir }}/{{ kopia_override_username }}.config
-  loop: "{{ kopia_seed_check.results | default([]) }}"
+      --config-file={{ kopia_agent_config_dir }}/{{ source_def.key }}.config
+  loop: "{{ kopia_seed_check.results }}"
   when:
     - '(item.stdout | length == 0) or ("no snapshots" in item.stdout)'
 
-- name: Start and enable per-service backup timer
+# --- Timer control (enabled/disabled via inventory) ---
+
+- name: Reload systemd (pick up template changes)
   ansible.builtin.systemd:
-    name: "kopia-backup@{{ kopia_override_username }}.timer"
+    daemon_reload: true
+
+- name: Stop and disable per-service backup timer (if disabled in inventory)
+  ansible.builtin.systemd:
+    name: "kopia-backup@{{ source_def.key }}.timer"
+    state: stopped
+    enabled: no
+  when: not (source_def.value.enabled | default(true))
+
+- name: Start and enable per-service backup timer (if enabled in inventory)
+  ansible.builtin.systemd:
+    name: "kopia-backup@{{ source_def.key }}.timer"
     state: started
     enabled: yes
+  when: source_def.value.enabled | default(true)

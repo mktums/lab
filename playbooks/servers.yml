@@ -12,7 +12,7 @@
 #   ansible-playbook servers.yml                     # full deploy
 #   ansible-playbook servers.yml --tags traefik      # traefik + its deps (step_ca)
 #   ansible-playbook servers.yml --limit lab2        # all roles, only on lab2
-#   ansible-playbook servers.yml --tags beszel -e "beszel_token=..."  # selective
+#   ansible-playbook servers.yml --tags beszel_hub,beszel_agent -e "beszel_token=..."  # selective
 #
 - name: Deploy homelab services
   hosts: servers
@@ -53,20 +53,20 @@
 
     # Kopia (server behind traefik, agent before services that depend on it)
     - role: kopia_server
-      tags: [kopia, kopia_server]
+      tags: [kopia_server]
       when: inventory_hostname in groups.get('kopia_server_hosts', [])
 
     - role: kopia_agent
-      tags: [kopia, kopia_agent]
+      tags: [kopia_agent]
       when: inventory_hostname in groups.get('kopia_agent_hosts', [])
 
     # Beszel (hub + agents split into separate roles)
     - role: beszel_hub
-      tags: [beszel, beszel_hub]
+      tags: [beszel_hub]
       when: inventory_hostname in groups.get('beszel_hosts', [])
 
     - role: beszel_agent
-      tags: [beszel, beszel_agent]
+      tags: [beszel_agent]
       when: inventory_hostname in groups.get('beszel_agent_hosts', [])
 
     - role: portainer

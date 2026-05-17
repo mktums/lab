@@ -103,3 +103,15 @@ kopia_repo_password: "{{ vault_kopia_repo_password }}"
 kopia_server_admin_user: "{{ vault_kopia_server_admin_user }}"
 kopia_server_admin_pass: "{{ vault_kopia_server_admin_pass }}"
 kopia_control_password: "{{ vault_kopia_control_password }}"
+
+# ── Kopia global repository policy ──────────────────────────────────────
+kopia_global_retention:
+  keep_latest: 10
+  keep_hourly: 48
+  keep_daily: 7
+  keep_weekly: 4
+  keep_monthly: 24
+  keep_annual: 3
+kopia_global_parallelism:
+  max_file_reads: 8     # Conservative for 16GB RAM with concurrent backups
+  max_snapshots: 4      # Staggered service backups without saturating mirror I/O
