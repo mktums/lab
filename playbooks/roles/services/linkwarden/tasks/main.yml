@@ -19,6 +19,8 @@
       MEILI_HOST=http://{{ meilisearch_cname }}.{{ lan_domain }}:{{ meilisearch_port }}
       MEILI_MASTER_KEY={{ meilisearch_master_key }}
       STORAGE_FOLDER=/data
+      RSS_SUBSCRIPTION_LIMIT_PER_USER=1000
+      ALLOW_PRIVATE_NETWORK_ACCESS=true
     dest: "{{ linkwarden_opt_dir }}/.env"
     mode: "0600"
     backup: true
