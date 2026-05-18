@@ -54,7 +54,6 @@
   loop:
     - { src: docker-compose.yml.j2, dest: docker-compose.yml, mode: '0644' }
     - { src: .env.j2, dest: .env, mode: '0600' }
-  notify: Restart Kopia server
 
 - name: Deploy Kopia server stack
   community.docker.docker_compose_v2:
@@ -65,6 +64,13 @@
     wait: true
     wait_timeout: 120
     pull: missing
+
+- name: Wait for Kopia server to be ready
+  ansible.builtin.wait_for:
+    port: "{{ kopia_internal_port }}"
+    host: "127.0.0.1"
+    delay: 3
+    timeout: 30
 
 - name: Set maintenance ownership (first agent identity)
   ansible.builtin.shell: >-

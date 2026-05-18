@@ -24,6 +24,7 @@ services:
       --tls-key-file=/app/config/server.key
       --server-username={{ kopia_server_admin_user }}
       --server-password=${KOPIA_SERVER_ADMIN_PASSWORD}
+      --control-api
       --server-control-username=${KOPIA_SERVER_CONTROL_USER}
       --server-control-password=${KOPIA_SERVER_CONTROL_PASSWORD}
 

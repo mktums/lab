@@ -32,7 +32,7 @@
   changed_when: false
   no_log: true
 
-- name: Provision user on Kopia server (skip if exists)
+- name: Add new user on Kopia server (if not exists)
   ansible.builtin.shell: >-
     docker compose exec -T kopia-server kopia server users add {{ source_def.key }}@{{ source_def.value.hostname }} --user-password='{{ kopia_repo_password }}'
   args:
@@ -41,6 +41,18 @@
   changed_when: false
   no_log: true
   when: (source_def.key + '@' + source_def.value.hostname) not in kopia_users_list.stdout
+
+- name: Set user password on Kopia server (if exists)
+  ansible.builtin.shell: >-
+    docker compose exec -T kopia-server kopia server users set {{ source_def.key }}@{{ source_def.value.hostname }} --user-password='{{ kopia_repo_password }}'
+  args:
+    chdir: "{{ kopia_opt_dir }}"
+  delegate_to: "{{ kopia_server_host }}"
+  changed_when: false
+  no_log: true
+  when: (source_def.key + '@' + source_def.value.hostname) in kopia_users_list.stdout
+
+
 
 - name: Check if agent config exists
   ansible.builtin.stat:
@@ -88,15 +100,13 @@
     - "'kopia-backup@{{ source_def.key }}.timer' in kopia_timer_list.stdout"
 
 - name: Set per-source retention policy
-  ansible.builtin.shell: >-
-    /usr/bin/kopia policy set {{ item.key }}
-    {{ '--config-file=' ~ kopia_agent_config_dir ~ '/' ~ source_def.key ~ '.config' }}
-    {% if item.value.retention is defined %}{{ ' --keep-latest=' ~ item.value.retention.keep_latest | default(omit) }}{% endif %}
-    {% if item.value.retention is defined %}{{ ' --keep-hourly=' ~ item.value.retention.keep_hourly | default(omit) }}{% endif %}
-    {% if item.value.retention is defined %}{{ ' --keep-daily=' ~ item.value.retention.keep_daily | default(omit) }}{% endif %}
-    {% if item.value.retention is defined %}{{ ' --keep-weekly=' ~ item.value.retention.keep_weekly | default(omit) }}{% endif %}
-    {% if item.value.retention is defined %}{{ ' --keep-monthly=' ~ item.value.retention.keep_monthly | default(omit) }}{% endif %}
-    {% if item.value.retention is defined %}{{ ' --keep-annual=' ~ item.value.retention.keep_annual | default(omit) }}{% endif %}
+  ansible.builtin.shell:
+    cmd: "{{ kopia_policy_cmd }}"
+  vars:
+    kopia_retention_flags: >-
+      {%- for key, val in (item.value.retention | default({})).items() %}
+      --keep-{{ key | replace('keep_', '') }}={{ val|string }}{% endfor -%}
+    kopia_policy_cmd: "/usr/bin/kopia policy set {{ item.key }} --config-file={{ kopia_agent_config_dir }}/{{ source_def.key }}.config{{ ' ' + kopia_retention_flags if kopia_retention_flags.strip() else '' }}"
   loop: "{{ source_def.value.paths | dict2items }}"
   changed_when: false
   when: item.value.enabled | default(true)
@@ -118,14 +128,19 @@
   when: (source_def.value.actions | default({})).get('after-snapshot-root', false)
 
 - name: Register snapshot-root actions in Kopia policy (if defined)
-  ansible.builtin.shell: >-
-    /usr/bin/kopia policy set {{ item.key }}
-    {{ '--config-file=' ~ kopia_agent_config_dir ~ '/' ~ source_def.key ~ '.config' }}
-    {% if (source_def.value.actions | default({})).get('before-snapshot-root', false) %}{{ ' --before-snapshot-root-action=' ~ kopia_agent_config_dir ~ '/' ~ source_def.key ~ '_before-snapshot-root.sh' }}{% endif %}
-    {% if (source_def.value.actions | default({})).get('after-snapshot-root', false) %}{{ ' --after-snapshot-root-action=' ~ kopia_agent_config_dir ~ '/' ~ source_def.key ~ '_after-snapshot-root.sh' }}{% endif %}
+  ansible.builtin.shell:
+    cmd: "/usr/bin/kopia policy set {{ item.key }} --config-file={{ kopia_agent_config_dir }}/{{ source_def.key }}.config{{ ' ' + action_flags if action_flags.strip() else '' }}"
+  vars:
+    action_flags: >-
+      {%- if (source_def.value.actions | default({})).get('before-snapshot-root', false) %}
+      --before-snapshot-root-action={{ kopia_agent_config_dir }}/{{ source_def.key }}_before-snapshot-root.sh{% endif -%}
+      {%- if (source_def.value.actions | default({})).get('after-snapshot-root', false) %}
+      --after-snapshot-root-action={{ kopia_agent_config_dir }}/{{ source_def.key }}_after-snapshot-root.sh{% endif -%}
   loop: "{{ source_def.value.paths | dict2items }}"
   changed_when: false
-  when: item.value.enabled | default(true)
+  when:
+    - item.value.enabled | default(true)
+    - (source_def.value.actions | default({})).get('before-snapshot-root', false) or (source_def.value.actions | default({})).get('after-snapshot-root', false)
 
 # --- Folder-level action scripts (per-path, NOT inherited by Kopia) ---
 
@@ -141,11 +156,14 @@
     - item.value.enabled | default(true)
 
 - name: Register folder-level actions in Kopia policy (per-path, if defined)
-  ansible.builtin.shell: >-
-    /usr/bin/kopia policy set {{ item.key }}
-    {{ '--config-file=' ~ kopia_agent_config_dir ~ '/' ~ source_def.key ~ '.config' }}
-    {% if 'before-folder' in item.value %}{{ ' --before-folder-action=' ~ kopia_agent_config_dir ~ '/' ~ source_def.key ~ '_before-folder_' ~ item.key | hash('md5')[:8] ~ '.sh' }}{% endif %}
-    {% if 'after-folder' in item.value %}{{ ' --after-folder-action=' ~ kopia_agent_config_dir ~ '/' ~ source_def.key ~ '_after-folder_' ~ item.key | hash('md5')[:8] ~ '.sh' }}{% endif %}
+  ansible.builtin.shell:
+    cmd: "/usr/bin/kopia policy set {{ item.key }} --config-file={{ kopia_agent_config_dir }}/{{ source_def.key }}.config{{ ' ' + folder_action_flags if folder_action_flags.strip() else '' }}"
+  vars:
+    path_hash: "{{ item.key | hash('md5')[:8] }}"
+    action_flags_list:
+      - "{% if 'before-folder' in item.value %}--before-folder-action={{ kopia_agent_config_dir }}/{{ source_def.key }}_before-folder_{{ path_hash }}.sh{% endif %}"
+      - "{% if 'after-folder' in item.value %}--after-folder-action={{ kopia_agent_config_dir }}/{{ source_def.key }}_after-folder_{{ path_hash }}.sh{% endif %}"
+    folder_action_flags: "{{ action_flags_list | reject('equalto', '') | join(' ') }}"
   loop: >-
     {{ source_def.value.folder_actions | default({}) | dict2items }}
   changed_when: false

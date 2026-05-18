@@ -25,6 +25,22 @@ beszel_extra_volumes:
 
 # ── Kopia backup sources ────────────────────────────────────────────────
 backup_sources:
+  step_ca:
+    hostname: server
+    paths:
+      "{{ step_ca_data_dir }}/certs":
+        retention:
+          keep_latest: 10
+          keep_daily: 30
+          keep_monthly: 12
+          keep_annual: 5
+      "{{ step_ca_data_dir }}/secrets":
+        retention:
+          keep_latest: 10
+          keep_daily: 30
+          keep_monthly: 12
+          keep_annual: 5
+
   postgres:
     hostname: server
     paths:
