@@ -1,0 +1,4 @@
+#!/bin/sh
+# Vaultwarden post-backup: clean staging dir
+STAGING="{{ vaultwarden_backup_staging_dir }}"
+rm -rf "$STAGING"

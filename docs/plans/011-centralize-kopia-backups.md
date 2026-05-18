@@ -25,9 +25,10 @@ This is how Prometheus exporters work (declared in inventory, deployed separatel
 
 | Role | Backup files | What it does | Coupling to Kopia |
 |------|-------------|--------------|-------------------|
-| `meta/postgres` | `defaults/backup.yml`, `tasks/backup.yml` | Declares sources, calls `register_source` | Identity + paths + retention + pre-action template |
+| `meta/postgres` | (none — moved to inventory) | Declares sources in host_vars, action script in kopia_agent/templates/actions/ | None (decoupled) |
+| `services/vaultwarden` | (none — moved to inventory) | Action scripts in kopia_agent/templates/actions/ | None (decoupled) |
 
-All other service roles (linkwarden, qbittorrent, vaultwarden, inpx_web, portainer, step_ca, traefik) have **no backup** — data is either ephemeral, user-generated on disk, or covered by Kopia repository-level snapshots.
+All other service roles (linkwarden, qbittorrent, inpx_web, portainer, step_ca, traefik) have **no backup** — data is either ephemeral, user-generated on disk, or covered by Kopia repository-level snapshots.
 
 ### Current flow (servers.yml single play)
 

@@ -20,3 +20,6 @@ db_list=$(docker compose exec -T postgres psql -U "$PG_USER" -t -c "SELECT datna
 for db in $db_list; do
   docker compose exec -T postgres pg_dump -U "$PG_USER" "$db" > "$DUMP_DIR/dump-${db}.sql"
 done
+
+# Redirect kopia to snapshot backups dir instead of original source
+echo "KOPIA_SNAPSHOT_PATH=$DUMP_DIR"

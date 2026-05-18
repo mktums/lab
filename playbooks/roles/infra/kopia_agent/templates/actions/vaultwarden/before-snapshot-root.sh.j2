@@ -1,0 +1,17 @@
+#!/bin/bash
+# Vaultwarden pre-backup: stage config.json, attachments/, sends/ with preserved attributes
+set -euo pipefail
+
+STAGING="{{ vaultwarden_backup_staging_dir }}"
+SOURCE="{{ vaultwarden_data_dir }}"
+
+mkdir -p "$STAGING"
+rm -f "$STAGING/config.json"
+rm -rf "$STAGING"/attachments "$STAGING"/sends
+
+cp -a "$SOURCE/config.json"          "$STAGING/" 2>/dev/null || true
+cp -a "$SOURCE/attachments/"         "$STAGING/" 2>/dev/null || true
+cp -a "$SOURCE/sends/"               "$STAGING/" 2>/dev/null || true
+
+# Redirect kopia to snapshot staging dir instead of original source
+echo "KOPIA_SNAPSHOT_PATH=$STAGING"

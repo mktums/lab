@@ -1,16 +1,44 @@
 ---
 services:
+  wait-for-postgres:
+    image: "alpine:{{ alpine_image_tag }}"
+    restart: "no"
+    command: >
+      sh -c "until nc -z {{ postgres_cname }}.{{ lan_domain }} {{ postgres_port | string }}; do sleep 3; done"
+
+{% if vaultwarden_db_init | default(true) %}
+  db-init:
+    image: "{{ postgres_image_name }}:{{ postgres_image_tag }}"
+    restart: "no"
+    tmpfs:
+      - /var/lib/postgresql/data
+    environment:
+      PGPASSWORD: "{{ vault_postgres_password }}"
+    command: >
+      sh -c "until pg_isready -h {{ postgres_cname }}.{{ lan_domain }} -p {{ postgres_port | string }}; do sleep 2; done &&
+             psql -h {{ postgres_cname }}.{{ lan_domain }} -U postgres -d postgres -c 'CREATE USER vaultwarden WITH PASSWORD ''{{ vault_vaultwarden_db_password }}'';' || true &&
+             psql -h {{ postgres_cname }}.{{ lan_domain }} -U postgres -d postgres -tc \"SELECT 1 FROM pg_database WHERE datname='vaultwarden'\" | grep -q 1 ||
+             psql -h {{ postgres_cname }}.{{ lan_domain }} -U postgres -d postgres -c 'CREATE DATABASE vaultwarden OWNER vaultwarden'"
+    depends_on:
+      wait-for-postgres:
+        condition: service_completed_successfully
+
+{% endif %}
   vaultwarden:
     image: "{{ vaultwarden_image_name }}:{{ vaultwarden_image_tag }}"
     restart: unless-stopped
+    depends_on:
+      wait-for-postgres:
+        condition: service_completed_successfully
+{% if vaultwarden_db_init | default(true) %}
+      db-init:
+        condition: service_completed_successfully
+{% endif %}
+    env_file:
+      - .env
     volumes:
       - "{{ vaultwarden_data_dir }}:/data"
       - /etc/localtime:/etc/localtime:ro
-    environment:
-      DOMAIN: "https://{{ vaultwarden_cname }}.{{ lan_domain }}"
-      ADMIN_TOKEN: "{{ vaultwarden_admin_token }}"
-      SIGNUPS_ALLOWED: "true"
-      LOG_LEVEL: "warn"
     labels:
       traefik.enable: "true"
       traefik.http.routers.vaultwarden.rule: "Host(`{{ vaultwarden_cname }}.{{ lan_domain }}`)"

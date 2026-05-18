@@ -44,7 +44,7 @@ backup_sources:
   postgres:
     hostname: server
     paths:
-      "{{ postgres_data_dir }}/backups":
+      "{{ postgres_data_dir }}":
         retention:
           keep_latest: 10
           keep_hourly: 48
@@ -54,3 +54,17 @@ backup_sources:
           keep_annual: 3
     actions:
       before-snapshot-root: true
+
+  vaultwarden:
+    hostname: server
+    paths:
+      "{{ vaultwarden_data_dir }}":
+        retention:
+          keep_latest: 10
+          keep_hourly: 48
+          keep_daily: 30
+          keep_monthly: 12
+          keep_annual: 5
+    actions:
+      before-snapshot-root: true
+      after-snapshot-root: true

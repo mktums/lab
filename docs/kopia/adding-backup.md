@@ -40,6 +40,12 @@ mkdir -p "$DUMP_DIR"
 cd /opt/ansible/my-service && docker compose exec -T myapp dump > "$DUMP_DIR/dump.sql"
 ```
 
+**Redirect snapshot target (optional):** Print `KOPIA_SNAPSHOT_PATH=<dir>` to stdout to tell kopia to snapshot a different directory instead of the original source. Useful for staging or PIT dumps:
+
+```sh
+echo "KOPIA_SNAPSHOT_PATH=$DUMP_DIR"
+```
+
 Then enable the action in inventory:
 
 ```yaml

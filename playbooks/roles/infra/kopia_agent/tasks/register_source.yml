@@ -42,6 +42,16 @@
   no_log: true
   when: (source_def.key + '@' + source_def.value.hostname) not in kopia_users_list.stdout
 
+- name: Refresh Kopia server after adding new user
+  ansible.builtin.shell: >-
+    docker compose exec -T kopia-server kopia server refresh --address=https://{{ kopia_cname }}.{{ lan_domain }}:443 --server-control-username=control --server-control-password='{{ kopia_control_password }}'
+  args:
+    chdir: "{{ kopia_opt_dir }}"
+  delegate_to: "{{ kopia_server_host }}"
+  changed_when: false
+  no_log: true
+  when: (source_def.key + '@' + source_def.value.hostname) not in kopia_users_list.stdout
+
 - name: Set user password on Kopia server (if exists)
   ansible.builtin.shell: >-
     docker compose exec -T kopia-server kopia server users set {{ source_def.key }}@{{ source_def.value.hostname }} --user-password='{{ kopia_repo_password }}'

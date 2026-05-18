@@ -8,6 +8,18 @@
     - "{{ vaultwarden_opt_dir }}"
     - "{{ vaultwarden_data_dir }}"
 
+- name: Write Vaultwarden .env file
+  ansible.builtin.copy:
+    content: |
+      DATABASE_URL=postgresql://vaultwarden:{{ vault_vaultwarden_db_password }}@{{ postgres_cname }}.{{ lan_domain }}:5432/vaultwarden
+      DOMAIN=https://{{ vaultwarden_cname }}.{{ lan_domain }}
+      ADMIN_TOKEN={{ vaultwarden_admin_token }}
+      SIGNUPS_ALLOWED=true
+      LOG_LEVEL=warn
+    dest: "{{ vaultwarden_opt_dir }}/.env"
+    mode: "0600"
+    backup: true
+
 - name: Render compose file
   ansible.builtin.template:
     src: docker-compose.yml.j2

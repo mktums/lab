@@ -11,6 +11,7 @@ services:
       - "{{ kopia_cache_dir }}:/app/cache"
       - "{{ kopia_logs_dir }}:/app/logs"
       - /etc/localtime:/etc/localtime:ro
+      - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
       # - /mnt/kopia-tmp:/tmp:shared  # uncomment for snapshot browsing
     env_file:
       - .env
