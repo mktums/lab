@@ -68,3 +68,13 @@ backup_sources:
     actions:
       before-snapshot-root: true
       after-snapshot-root: true
+
+  linkwarden:
+    hostname: server
+    paths:
+      "{{ linkwarden_data_dir }}/data":
+        retention:
+          keep_latest: 10
+          keep_daily: 30
+          keep_monthly: 12
+          keep_annual: 5
