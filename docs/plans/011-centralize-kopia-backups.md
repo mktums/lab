@@ -1,5 +1,14 @@
 # 011: Centralize Kopia backup orchestration in kopia_agent role
 
+## Status: ✅ Done
+
+All implementation steps completed:
+- Backup config moved from postgres/defaults/backup.yml to inventory/host_vars/lab1.yml
+- Postgres role decoupled (no backup tasks, no kopia references)
+- Action templates resolved by convention (`actions/<service>/` in kopia_agent)
+- `register_source.yml` loops over `backup_sources` dict
+- Documentation updated (`docs/kopia/adding-backup.md`)
+
 ## Motivation
 
 Backup configuration is currently embedded inside service roles (Postgres includes `kopia_agent/register_source` from its own tasks). This couples every participating service to Kopia implementation details and scatters backup auditability across N roles. Moving all backup orchestration into the `kopia_agent` role — driven by inventory declarations — separates concerns cleanly: services deploy, Kopia protects.
@@ -28,7 +37,7 @@ This is how Prometheus exporters work (declared in inventory, deployed separatel
 | `meta/postgres` | (none — moved to inventory) | Declares sources in host_vars, action script in kopia_agent/templates/actions/ | None (decoupled) |
 | `services/vaultwarden` | (none — moved to inventory) | Action scripts in kopia_agent/templates/actions/ | None (decoupled) |
 
-All other service roles (linkwarden, qbittorrent, inpx_web, portainer, step_ca, traefik) have **no backup** — data is either ephemeral, user-generated on disk, or covered by Kopia repository-level snapshots.
+All other service roles (qbittorrent, inpx_web, portainer, traefik) have **no backup** — data is either ephemeral, user-generated on disk, or covered by Kopia repository-level snapshots.
 
 ### Current flow (servers.yml single play)
 

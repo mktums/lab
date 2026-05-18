@@ -13,6 +13,8 @@ All tasks completed:
 - `db-init`: Uses postgres image to create user+DB idempotently
 - Old deploy.yml + db_init.yml removed (consolidated into main.yml)
 - Handler updated to use docker_compose_v2 with explicit `files:`
+- Added `RSS_SUBSCRIPTION_LIMIT_PER_USER=1000` and `ALLOW_PRIVATE_NETWORK_ACCESS=true`
+- Kopia backup for archives dir (`{{ linkwarden_data_dir }}/data`)
 
 ## Motivation
 

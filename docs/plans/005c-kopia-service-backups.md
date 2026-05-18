@@ -16,7 +16,7 @@ Integrate backup registration into selected service roles using the kopia_agent 
 | postgres | Done | Logical dump via pg_dump to `backups/` dir | before-snapshot-root: dumps DB once per snapshot |
 | step_ca | Done | `/srv/docker_data/step-ca/certs`, `/srv/docker_data/step-ca/secrets` | No — static files |
 | vaultwarden | Done | Staging dir (config.json, attachments/, sends/) via KOPIA_SNAPSHOT_PATH redirect | before-snapshot-root: copies with `cp -a`, after-snapshot-root: cleans staging |
-| linkwarden | Draft | Application data (if separate from postgres) | TBD — depends on storage backend |
+| linkwarden | Done | Archives dir (`/data/data`) — DB covered by postgres pg_dumpall | No pre-action needed (static files) |
 
 ## Integration pattern
 

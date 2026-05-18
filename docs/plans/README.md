@@ -23,7 +23,7 @@ Each file describes a single change or refactoring effort: the motivation, affec
 | 4 | Normal | [Remove `lab_index` — use inventory_hostname directly](004-remove-lab-index.md) | Easy | ✅ Done (2026-05-03) |
 | 5a | Critical | [Deploy Kopia repository server](005a-kopia-server.md) | Hard | ✅ Done (2026-05-13) |
 | 5b | Critical | [Kopia agents (lab services, PC, MacBook, Android)](005b-kopia-agents.md) | Hard | ✅ Done (2026-05-13) |
-| 5c | Normal | [Service backups: step-ca, postgres, vaultwarden, linkwarden](005c-kopia-service-backups.md) | Medium | In progress (pattern updated by [011](011-centralize-kopia-backups.md)) |
+| 5c | Normal | [Service backups: step-ca, postgres, vaultwarden, linkwarden](005c-kopia-service-backups.md) | Medium | ✅ Done (pattern updated by [011](011-centralize-kopia-backups.md)) |
 | 6 | Low | [Service docs generator approach TBD](006-docs-generator-approach.md) | — | In review |
 | 7 | High | [Migrate from docker_container to Docker Compose](007-migrate-to-docker-compose.md) | Hard | ✅ Done (2026-05-07) |
 | 8 | Low | [Optimize inpx-web Dockerfile (multi-stage build)](008-optimize-inpx-dockerfile.md) | Medium | In review |

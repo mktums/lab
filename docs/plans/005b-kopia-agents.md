@@ -14,6 +14,8 @@ Deploy backup agents for all lab services and personal devices connecting to the
 | register_source.yml (per-source retention, actions, seed guard) | Done |
 | Folder-level actions (before/after) | Done |
 | Postgres backup integration (per-DB + globals dump) | Done |
+| Vaultwarden backup (staging + KOPIA_SNAPSHOT_PATH redirect) | Done |
+| Linkwarden backup (archives dir) | Done |
 | Personal PC — Windows Task Scheduler / Linux agent | Planned |
 | MacBook — LaunchAgent + TCC permissions | Planned |
 | Android devices — Kopia app setup | Planned |
