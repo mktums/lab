@@ -15,7 +15,6 @@
     mode: "0644"
   loop:
     - Dockerfile
-    - supervisord.conf
     - entrypoint.sh
 
 - name: Fix entrypoint permissions
@@ -29,7 +28,6 @@
     checksum_algorithm: sha256
   loop:
     - Dockerfile
-    - supervisord.conf
     - entrypoint.sh
   register: _build_context_stats
 

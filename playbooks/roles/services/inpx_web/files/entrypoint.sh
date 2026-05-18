@@ -19,7 +19,6 @@ if [ ! -L /data/liberama/calibre/ebook-convert ]; then
   ln -sf /usr/bin/ebook-convert /data/liberama/calibre/ebook-convert
 fi
 
-
 if [ ! -f /data/liberama/config.json ]; then
   cat > /data/liberama/config.json <<'EOF'
 {
@@ -39,4 +38,12 @@ EOF
   sed -i "s|LIB_DOMAIN|${LIB_DOMAIN}|g" /data/liberama/config.json
 fi
 
-exec /usr/bin/supervisord -c /etc/supervisor/conf.d/apps.conf
+# Execute the command passed by Compose (e.g. /srv/inpx-web or /srv/liberama)
+# For inpx-web: auto-detect .inpx file and append --inpx flag
+if [ "${1:-}" = "/srv/inpx-web" ]; then
+  INPX=$(find /downloads -maxdepth 1 -name "*.inpx" | head -1)
+  if [ -n "$INPX" ]; then
+    set -- "$@" --inpx="$INPX"
+  fi
+fi
+exec "$@"

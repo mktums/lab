@@ -26,7 +26,7 @@ Each file describes a single change or refactoring effort: the motivation, affec
 | 5c | Normal | [Service backups: step-ca, postgres, vaultwarden, linkwarden](005c-kopia-service-backups.md) | Medium | ✅ Done (pattern updated by [011](011-centralize-kopia-backups.md)) |
 | 6 | Low | [Service docs generator approach TBD](006-docs-generator-approach.md) | — | In review |
 | 7 | High | [Migrate from docker_container to Docker Compose](007-migrate-to-docker-compose.md) | Hard | ✅ Done (2026-05-07) |
-| 8 | Low | [Optimize inpx-web Dockerfile (multi-stage build)](008-optimize-inpx-dockerfile.md) | Medium | In review |
+| 8 | Low | [Optimize inpx-web Dockerfile (multi-stage build)](008-optimize-inpx-dockerfile.md) | Medium | ✅ Done (2026-05-18) |
 | 9 | Normal | [Reconsider service playbook independence](009-service-playbook-independence.md) | Easy | ✅ Done (2026-05-05) |
 | 10 | High | [CNAME name/target consistency across roles](010-cname-consistency.md) | Medium | ✅ Done (2026-05-09) |
 | 11 | Normal | [Centralize Kopia backup orchestration in kopia_agent role](011-centralize-kopia-backups.md) | Medium | ✅ Done (2026-05-17) |

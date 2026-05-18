@@ -12,5 +12,8 @@ inpx_web_config_dir: "/opt/inpx-web"
 inpx_web_port: 12380
 inpx_web_liberama_port: 44080
 
+# Library directory for inpx-web (--lib-dir flag)
+inpx_web_lib_dir: "{{ downloads_dir }}/Flibusta.Net"
+
 # CNAME subdomain (without .{{ lan_domain }})
 inpx_web_cname: "lib"
